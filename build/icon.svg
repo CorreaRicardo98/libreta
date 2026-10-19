@@ -1,0 +1,11 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 1024 1024">
+  <title>Libreta</title>
+  <!-- cuadro: azul tinta de la app -->
+  <rect x="64" y="64" width="896" height="896" rx="210" fill="#2640c4"/>
+  <!-- una «L» hecha con una sola cinta doblada: tramo vertical en blanco papel,
+       tramo horizontal en amarillo marcador, unidos por un inglete a 45° -->
+  <g transform="translate(512 512) scale(1.08) translate(-540 -510)">
+    <polygon points="300,300 490,210 490,610 300,810" fill="#f6f7fb"/>
+    <polygon points="490,610 780,610 700,810 300,810" fill="#ffd640"/>
+  </g>
+</svg>

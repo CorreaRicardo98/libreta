@@ -1,0 +1,20 @@
+name: Proponer una mejora
+description: Una función nueva o un cambio en una existente
+labels: [enhancement]
+body:
+  - type: textarea
+    id: problema
+    attributes:
+      label: ¿Qué necesitas hacer y hoy no puedes?
+      description: Empieza por el problema, no por la solución.
+    validations: { required: true }
+  - type: textarea
+    id: idea
+    attributes:
+      label: ¿Cómo imaginas que funcionaría?
+  - type: checkboxes
+    id: ayuda
+    attributes:
+      label: Participación
+      options:
+        - label: Me gustaría intentar implementarlo yo
