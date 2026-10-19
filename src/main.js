@@ -1,5 +1,6 @@
 import { $, esc, showMenu, promptDialog, confirmDialog, passwordDialog, smartDialog, importDialog, historyDialog, toast, shortDate, longDate, groupLabel } from './ui.js';
 import { search, matches } from './search.js';
+import { helpDialog } from './help.js';
 import { createEditor, snapshot, countWords, insertFiles } from './editor.js';
 import { drawDialog, scanDialog } from './draw.js';
 import { htmlToMarkdown } from './md.js';
@@ -756,6 +757,8 @@ api.on('menu', async (cmd) => {
     case 'new-note': newNote(); break;
     case 'new-folder': newFolder(); break;
     case 'import': importNotes(); break;
+    case 'help': openHelp('start'); break;
+    case 'help-keys': openHelp('keys'); break;
     case 'export-pdf': exportNote('pdf'); break;
     case 'export-html': exportNote('html'); break;
     case 'export-md': exportNote('md'); break;
@@ -846,6 +849,29 @@ async function openHistory() {
   toast('Versión restaurada. La anterior quedó en el historial.');
 }
 
+// ---------------------------------------------------------------- ayuda
+async function openHelp(tab = 'start') {
+  const info = await api.appInfo().catch(() => ({}));
+  const r = await helpDialog({ version: info.version || '', tab });
+  if (!r) return;
+  if (r.search) {
+    S.scope = { type: 'all' };
+    S.q = r.search;
+    $('#search').value = r.search;
+    app.dataset.pane = 'list';
+    renderAll();
+    return;
+  }
+  switch (r.act) {
+    case 'new-folder': await newFolder(); break;
+    case 'smart': await editSmart(null); break;
+    case 'import': await importNotes(); break;
+    case 'open-vault': await api.vault.open(); break;
+    case 'search': app.dataset.pane = 'list'; $('#search').focus(); break;
+  }
+}
+$('#btn-help').addEventListener('click', () => openHelp());
+
 // ---------------------------------------------------------------- importar
 async function importNotes() {
   const kind = await importDialog();
@@ -893,13 +919,19 @@ async function importNotes() {
 // ---------------------------------------------------------------- arranque
 function renderAll() { renderSide(); renderList(); renderBacklinks(); }
 
+const task = (done, text) => `<li data-type="taskItem" data-checked="${done}"><label><input type="checkbox" ${done ? 'checked' : ''}><span></span></label><div><p>${text}</p></div></li>`;
 const WELCOME = `<h1>Bienvenida a Libreta</h1>
-<p>Libreta guarda cada nota como un archivo en una carpeta de tu equipo. Tú decides dónde está y la puedes sincronizar con el servicio que prefieras.</p>
-<h2>Lo básico</h2>
-<ul data-type="taskList"><li data-type="taskItem" data-checked="true"><label><input type="checkbox" checked><span></span></label><div><p>Crea una nota con <code>Ctrl</code> + <code>N</code></p></div></li><li data-type="taskItem" data-checked="false"><label><input type="checkbox"><span></span></label><div><p>Marca esta tarea tocando el círculo</p></div></li><li data-type="taskItem" data-checked="false"><label><input type="checkbox"><span></span></label><div><p>Arrastra una nota de la lista hasta una carpeta</p></div></li></ul>
-<h2>Da forma a lo que escribes</h2>
-<p>La primera línea es el título. Usa la barra de arriba para <strong>negritas</strong>, <em>cursivas</em>, <mark>resaltados</mark>, listas, tablas, enlaces e imágenes. También puedes pegar o arrastrar imágenes directo a la nota.</p>
-<p>Escribe <code>[[</code> para enlazar otra nota, y mira abajo qué notas la mencionan.</p>
+<p>Tus notas son archivos en una carpeta tuya: tú decides dónde está y con qué la sincronizas. Aquí tienes lo que puedes hacer y dónde encontrarlo.</p>
+<h2>Pruébalo ahora</h2>
+<ul data-type="taskList">${task(true, 'Crea una nota con <code>Ctrl</code> + <code>N</code>')}${task(false, 'Marca esta tarea tocando el círculo')}${task(false, 'Escribe <code>[[</code> y enlaza otra nota')}${task(false, 'Arrastra una nota de la lista hasta una carpeta')}${task(false, 'Pulsa «Nueva…» (abajo a la izquierda) y crea una subcarpeta o una carpeta inteligente')}</ul>
+<h2>Dónde está cada cosa</h2>
+<ul>
+<li><p><strong>Barra del editor</strong>: formato, listas de tareas, tabla, enlace, imagen, archivo adjunto, dibujo, escáner, candado y chincheta.</p></li>
+<li><p><strong>Menú «…»</strong> (arriba a la derecha): historial de versiones, compartir, exportar y mover.</p></li>
+<li><p><strong>Buscador</strong>: ignora acentos y perdona errores. Prueba <code>tiene:imagen</code> o <code>tag:ideas</code>.</p></li>
+<li><p><strong>Archivo → Importar notas</strong>: trae tus notas de Joplin, Obsidian, Evernote y más.</p></li>
+<li><p><strong>Ayuda → Guía rápida</strong> (o la tecla <code>F1</code>): todo esto con más detalle.</p></li>
+</ul>
 <p>Escribe etiquetas como #ideas o #pendientes y aparecerán a la izquierda para filtrar.</p>`;
 
 async function start() {

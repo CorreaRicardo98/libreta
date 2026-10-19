@@ -32,6 +32,7 @@ src/             Interfaz (HTML + JavaScript sin framework, empaquetada con Vite
   notelink.js      nodo de enlace entre notas
   draw.js          dibujo a mano y escáner con cámara
   md.js            conversor HTML → Markdown
+  help.js          guía rápida (Ayuda → Guía rápida): tarjetas, filtros y atajos
   ui.js            menús, diálogos, avisos, fechas
   styles.css       estilos y tema claro/oscuro
 tests/           Pruebas con el ejecutor integrado de Node (node:test)

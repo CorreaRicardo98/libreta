@@ -53,6 +53,7 @@ Para **actualizar**, instala la versión nueva encima: tus notas están en otra 
 - **Proteger**: **notas bloqueadas con contraseña** (AES-256-GCM).
 - **Traer lo que ya tienes**: importa desde carpetas de Markdown, texto o HTML (Joplin, Obsidian, Bear, Notion; Apple Notes exportada con una herramienta de terceros) y desde Evernote (`.enex`).
 - **Compartir y exportar**: copiar como texto o Markdown, enviar por correo, exportar a PDF, HTML o Markdown.
+- **Guía dentro de la app**: **Ayuda → Guía rápida** (`F1`) o el botón «Guía rápida» de la barra lateral explican dónde está cada función, los filtros de búsqueda y los atajos.
 - Tema claro y oscuro según tu sistema, uso completo con teclado y ventanas angostas.
 
 <table>
