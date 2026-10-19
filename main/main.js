@@ -96,6 +96,16 @@ function buildMenu() {
       ],
     },
     {
+      label: 'Ayuda',
+      submenu: [
+        { label: 'Guía rápida', accelerator: 'F1', click: send('help') },
+        { label: 'Atajos de teclado', click: send('help-keys') },
+        { type: 'separator' },
+        { label: 'Reportar un error…', click: () => shell.openExternal('https://github.com/CorreaRicardo98/libreta/issues/new/choose') },
+        { label: 'Código y comunidad', click: () => shell.openExternal('https://github.com/CorreaRicardo98/libreta') },
+      ],
+    },
+    {
       label: 'Ver',
       submenu: [
         { label: 'Como lista', accelerator: 'CmdOrCtrl+1', click: send('view-list') },
@@ -172,6 +182,7 @@ function registerIpc() {
     return shell.openPath(store.attachmentPath(m[1]));
   });
 
+  h('app:info', () => ({ version: app.getVersion(), platform: process.platform }));
   h('vault:info', () => ({ dir: store.dir }));
   h('vault:open', () => shell.openPath(store.dir));
   h('vault:change', async () => {

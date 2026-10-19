@@ -33,6 +33,7 @@ contextBridge.exposeInMainWorld('libreta', {
     get: (id, t) => call('history:get', id, t),
     restore: (id, t) => call('history:restore', id, t),
   },
+  appInfo: () => call('app:info'),
   importNotes: (kind) => call('import:run', kind),
   smart: {
     list: () => call('smart:list'),
