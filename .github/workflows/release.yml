@@ -33,3 +33,5 @@ jobs:
             dist/*.AppImage
             dist/*.deb
             dist/Libreta*.exe
+            dist/*.blockmap
+            dist/latest*.yml

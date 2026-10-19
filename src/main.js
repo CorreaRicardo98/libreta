@@ -1,6 +1,7 @@
 import { $, esc, showMenu, promptDialog, confirmDialog, passwordDialog, smartDialog, importDialog, historyDialog, toast, shortDate, longDate, groupLabel } from './ui.js';
 import { search, matches } from './search.js';
 import { helpDialog } from './help.js';
+import { initUpdates } from './updates.js';
 import { createEditor, snapshot, countWords, insertFiles } from './editor.js';
 import { drawDialog, scanDialog } from './draw.js';
 import { htmlToMarkdown } from './md.js';
@@ -935,6 +936,7 @@ const WELCOME = `<h1>Bienvenida a Libreta</h1>
 <p>Escribe etiquetas como #ideas o #pendientes y aparecerán a la izquierda para filtrar.</p>`;
 
 async function start() {
+  initUpdates({ flush: flushSave, toast });
   editor = createEditor({
     element: $('#editor'), onUpdate: onEditorUpdate, onSelection: syncToolbar, onLink: editLink,
     links: { getTitle: linkTitle, onOpen: openLinked, suggest: suggestNotes, create: createLinkedNote },

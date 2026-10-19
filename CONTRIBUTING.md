@@ -22,6 +22,7 @@ Tus notas de desarrollo se guardan en `~/Documentos/Libreta` (o en la carpeta qu
 main/            Proceso principal de Electron (Node.js)
   main.js          ventana, menú, IPC, exportación a PDF/HTML/Markdown
   store.js         almacén de notas en archivos: carpetas, cifrado, historial, carpetas inteligentes
+  updater.js       actualización desde las Releases de GitHub (electron-updater)
   importer.js      importadores: Markdown/HTML/texto y Evernote (.enex)
   preload.js       puente seguro entre la interfaz y el proceso principal (window.libreta)
 src/             Interfaz (HTML + JavaScript sin framework, empaquetada con Vite)
@@ -81,6 +82,6 @@ npm run dist:linux   # AppImage y .deb
 npm run dist:win     # instalador y portable (mejor desde Windows)
 ```
 
-Las versiones oficiales las compila GitHub Actions al subir una etiqueta `vX.Y.Z`.
+Las versiones oficiales las compila GitHub Actions al subir una etiqueta `vX.Y.Z`. Esa Release también adjunta `latest.yml` y `latest-linux.yml`, que son los que lee la actualización automática: **no los borres ni renombres los instaladores**, y mantén los nombres sin espacios (`artifactName` en `package.json`).
 
 Al participar aceptas el [Código de convivencia](CODE_OF_CONDUCT.md) y que tu aporte se publique bajo la licencia [MIT](LICENSE) del proyecto.

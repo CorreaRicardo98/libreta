@@ -1,7 +1,7 @@
 {
   "name": "libreta",
   "productName": "Libreta",
-  "version": "1.2.0",
+  "version": "1.3.0",
   "description": "Notas rápidas y organizadas, abiertas y locales. Para Windows y Linux.",
   "author": "Ricardo Correa Bautista (https://github.com/CorreaRicardo98)",
   "license": "MIT",
@@ -41,6 +41,7 @@
     "@tiptap/extension-underline": "^3.32.0",
     "@tiptap/pm": "^3.32.0",
     "@tiptap/starter-kit": "^3.32.0",
+    "electron-updater": "^6.8.9",
     "marked": "^18.1.1"
   },
   "build": {
@@ -64,7 +65,8 @@
       ],
       "category": "Office",
       "icon": "build/icons",
-      "maintainer": "Ricardo Correa Bautista <CorreaRicardo98@users.noreply.github.com>"
+      "maintainer": "Ricardo Correa Bautista <CorreaRicardo98@users.noreply.github.com>",
+      "artifactName": "Libreta-${version}.${ext}"
     },
     "win": {
       "target": [
@@ -76,7 +78,23 @@
     "nsis": {
       "oneClick": false,
       "allowToChangeInstallationDirectory": true,
-      "language": "3082"
+      "language": "3082",
+      "artifactName": "Libreta-Setup-${version}.${ext}"
+    },
+    "publish": [
+      {
+        "provider": "github",
+        "owner": "CorreaRicardo98",
+        "repo": "libreta",
+        "releaseType": "release"
+      }
+    ],
+    "artifactName": "${productName}-${version}.${ext}",
+    "portable": {
+      "artifactName": "Libreta-${version}-portable.${ext}"
+    },
+    "deb": {
+      "artifactName": "libreta_${version}_${arch}.${ext}"
     }
   },
   "homepage": "https://github.com/CorreaRicardo98/libreta",
