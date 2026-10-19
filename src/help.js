@@ -26,6 +26,8 @@ const CARDS = [
   { t: 'Traer tus notas de otro programa', where: 'Archivo → Importar notas…',
     how: 'Acepta carpetas de Markdown, texto o HTML (Joplin, Obsidian, Bear, Notion) y archivos de Evernote (.enex). Apple Notes hay que exportarla antes con una herramienta aparte.',
     act: ['import', 'Importar notas'] },
+  { t: 'Mantener Libreta al día', where: 'Ayuda → Buscar actualizaciones…',
+    how: 'Libreta revisa cada pocas horas si hay una versión nueva en GitHub y te avisa con una tarjeta en la esquina; nada se instala sin que lo aceptes. Solo consulta la lista de versiones y no envía tus notas. Puedes desactivar la revisión en Ayuda → Buscar actualizaciones automáticamente.' },
   { t: 'Tus notas son archivos tuyos', where: 'Archivo → Abrir carpeta de notas',
     how: 'Cada nota es un archivo. Puedes cambiar la carpeta desde Archivo → Cambiar carpeta de notas y sincronizarla con Syncthing, Nextcloud o Dropbox.',
     act: ['open-vault', 'Abrir la carpeta de notas'] },

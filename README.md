@@ -39,7 +39,11 @@ chmod +x Libreta-X.Y.Z.AppImage && ./Libreta-X.Y.Z.AppImage
 
 > **Aviso en Windows.** El instalador todavía no está firmado digitalmente, así que SmartScreen puede mostrar «Windows protegió su PC». Pulsa **Más información → Ejecutar de todas formas**. Puedes revisar el código y compilarlo tú mismo.
 
-Para **actualizar**, instala la versión nueva encima: tus notas están en otra carpeta y no se tocan.
+## Actualizaciones
+
+Libreta **te avisa cuando hay una versión nueva** y la instala si tú lo aceptas; nada se descarga ni se instala solo. Funciona con el instalador de Windows y con la AppImage. Con el `.deb` Libreta lo intenta y, si no puede, te lleva a la página de descargas. La versión portable solo te avisa.
+
+Para esto Libreta consulta, cada pocas horas, la lista de versiones de GitHub. No envía tus notas ni datos tuyos (GitHub solo ve que alguien consultó la lista). Puedes apagarlo en **Ayuda → Buscar actualizaciones automáticamente**, o buscar a mano con **Ayuda → Buscar actualizaciones…**. Las notas viven en otra carpeta y nunca se tocan al actualizar.
 
 ## Qué puedes hacer
 

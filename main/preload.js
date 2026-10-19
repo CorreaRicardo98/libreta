@@ -33,6 +33,12 @@ contextBridge.exposeInMainWorld('libreta', {
     get: (id, t) => call('history:get', id, t),
     restore: (id, t) => call('history:restore', id, t),
   },
+  updates: {
+    check: () => call('update:check'),
+    download: () => call('update:download'),
+    install: () => call('update:install'),
+    openReleases: () => call('update:openReleases'),
+  },
   appInfo: () => call('app:info'),
   importNotes: (kind) => call('import:run', kind),
   smart: {
@@ -49,7 +55,7 @@ contextBridge.exposeInMainWorld('libreta', {
     change: () => call('vault:change'),
   },
   on: (channel, fn) => {
-    const allowed = ['menu', 'notes:external-change'];
+    const allowed = ['menu', 'notes:external-change', 'update'];
     if (!allowed.includes(channel)) return () => {};
     const h = (_e, ...a) => fn(...a);
     ipcRenderer.on(channel, h);

@@ -17,7 +17,7 @@ Ideas ordenadas por cuánto ayudan a quien usa la app. No hay fechas: si algo te
 - [ ] Cambiar la contraseña de una nota bloqueada.
 
 ## Distribución
-- [ ] **Actualización automática** desde las Releases de GitHub.
+- [x] **Actualización automática** desde las Releases de GitHub (instalador de Windows y AppImage; `.deb` y portable con aviso).
 - [ ] Firmar los instaladores de Windows.
 - [ ] Paquetes Flatpak, Snap y RPM.
 - [ ] Instalador para macOS (el código ya es multiplataforma; falta compilarlo y probarlo).

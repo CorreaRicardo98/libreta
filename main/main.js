@@ -4,11 +4,13 @@ const fs = require('node:fs');
 const { pathToFileURL } = require('node:url');
 const { Store } = require('./store');
 const importer = require('./importer');
+const { createUpdater } = require('./updater');
 
 const DEV = !!process.env.LIBRETA_DEV;
 let win = null;
 let store = null;
 let watcher = null;
+let updater = null;
 
 protocol.registerSchemesAsPrivileged([
   { scheme: 'libreta', privileges: { standard: true, secure: true, supportFetchAPI: true, stream: true } },
@@ -23,6 +25,7 @@ function writeSettings(s) {
   fs.mkdirSync(path.dirname(settingsFile()), { recursive: true });
   fs.writeFileSync(settingsFile(), JSON.stringify(s, null, 2));
 }
+const autoUpdates = () => readSettings().autoUpdate !== false; // activado salvo que la persona lo apague
 const defaultVault = () => path.join(app.getPath('documents'), 'Libreta');
 
 function watchVault() {
@@ -100,6 +103,9 @@ function buildMenu() {
       submenu: [
         { label: 'Guía rápida', accelerator: 'F1', click: send('help') },
         { label: 'Atajos de teclado', click: send('help-keys') },
+        { type: 'separator' },
+        { label: 'Buscar actualizaciones…', click: () => updater?.check({ manual: true }) },
+        { label: 'Buscar actualizaciones automáticamente', type: 'checkbox', checked: autoUpdates(), click: (item) => writeSettings({ ...readSettings(), autoUpdate: item.checked }) },
         { type: 'separator' },
         { label: 'Reportar un error…', click: () => shell.openExternal('https://github.com/CorreaRicardo98/libreta/issues/new/choose') },
         { label: 'Código y comunidad', click: () => shell.openExternal('https://github.com/CorreaRicardo98/libreta') },
@@ -182,6 +188,10 @@ function registerIpc() {
     return shell.openPath(store.attachmentPath(m[1]));
   });
 
+  h('update:check', () => updater?.check({ manual: true }));
+  h('update:download', () => updater?.download());
+  h('update:install', () => updater?.install());
+  h('update:openReleases', () => updater?.openReleases());
   h('app:info', () => ({ version: app.getVersion(), platform: process.platform }));
   h('vault:info', () => ({ dir: store.dir }));
   h('vault:open', () => shell.openPath(store.dir));
@@ -267,6 +277,8 @@ else {
     buildMenu();
     createWindow();
     watchVault();
+    updater = createUpdater({ send: (p) => win?.webContents.send('update', p), getAuto: autoUpdates });
+    updater.start();
   });
   app.on('window-all-closed', () => app.quit());
 }
