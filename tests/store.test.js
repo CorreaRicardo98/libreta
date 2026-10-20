@@ -81,3 +81,43 @@ test('importación: crea carpetas por ruta y notas con fechas', () => {
   assert.equal(meta.created, 1000);
   assert.equal(s.listFolders().filter((f) => f.parentId).length, 1);
 });
+
+test('cambiar contraseña: la vieja deja de abrir, la nueva sí, y nunca queda en claro', () => {
+  const s = new Store(tmp());
+  const n = s.create();
+  s.save({ id: n.id, title: 'Secreto', html: '<p>clave</p>', text: 'clave' });
+  s.lockNote(n.id, 'vieja');
+  assert.ok(s.unlockNote(n.id, 'vieja'));
+  const saltAntes = s._raw(n.id).lock.salt;
+  assert.ok(s.changePassword(n.id, 'vieja', 'nueva'));
+  const crudo = fs.readFileSync(s._notePath(n.id), 'utf8');
+  assert.equal(crudo.includes('Secreto') || crudo.includes('clave'), false);
+  assert.notEqual(s._raw(n.id).lock.salt, saltAntes, 'sal nueva');
+  s.relock(n.id);
+  assert.equal(s.unlockNote(n.id, 'vieja'), null);
+  assert.equal(s.unlockNote(n.id, 'nueva').title, 'Secreto');
+});
+
+test('cambiar contraseña con la actual incorrecta no modifica nada', () => {
+  const s = new Store(tmp());
+  const n = s.create();
+  s.save({ id: n.id, title: 'T', html: '<p>x</p>', text: 'x' });
+  s.lockNote(n.id, 'pw');
+  const antes = fs.readFileSync(s._notePath(n.id), 'utf8');
+  assert.equal(s.changePassword(n.id, 'mala', 'otra'), null);
+  assert.equal(s.changePassword(n.id, 'pw', ''), null);
+  assert.equal(fs.readFileSync(s._notePath(n.id), 'utf8'), antes);
+  assert.ok(s.unlockNote(n.id, 'pw'));
+});
+
+test('cambiar contraseña borra el historial cifrado con la clave anterior', () => {
+  const s = new Store(tmp());
+  const n = s.create();
+  s.save({ id: n.id, title: 'a', html: '<p>a</p>', text: 'a' });
+  s.lockNote(n.id, 'pw');
+  s.unlockNote(n.id, 'pw');
+  s.save({ id: n.id, title: 'b', html: '<p>b</p>', text: 'b' });
+  s.save({ id: n.id, title: 'c', html: '<p>c</p>', text: 'c' });
+  s.changePassword(n.id, 'pw', 'nuevo');
+  assert.equal(s.listVersions(n.id).length, 0);
+});

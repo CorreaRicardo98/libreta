@@ -231,6 +231,24 @@ class Store {
     } catch { return null; }
   }
   relock(id) { this.keys.delete(id); }
+  /** Cambia la contraseña sin dejar la nota en claro. Con la actual incorrecta no toca nada. */
+  changePassword(id, oldPassword, newPassword) {
+    const cur = this._raw(id);
+    if (!cur?.locked || !newPassword) return null;
+    let secret;
+    try {
+      const oldKey = crypto.scryptSync(String(oldPassword), Buffer.from(cur.lock.salt, 'base64'), 32, SCRYPT);
+      secret = decrypt(oldKey, cur.lock); // lanza si la contraseña actual es incorrecta
+    } catch { return null; }
+    const salt = crypto.randomBytes(16);
+    const key = crypto.scryptSync(String(newPassword), salt, 32, SCRYPT);
+    const n = { ...cur, lock: encrypt(key, secret, salt.toString('base64')), updated: Date.now() };
+    this._write(n);
+    this.keys.set(id, key);
+    // las versiones antiguas están cifradas con la clave anterior y ya no se podrían abrir: se borran
+    this._clearHistory(id);
+    return this._meta(n);
+  }
   removeLock(id, password) {
     const cur = this._raw(id);
     if (!cur?.locked) return cur ? this._meta(cur) : null;

@@ -1,5 +1,5 @@
 import { t, tn, setLang, translateDom, locale } from './i18n.js';
-import { $, esc, showMenu, promptDialog, confirmDialog, passwordDialog, smartDialog, importDialog, historyDialog, toast, shortDate, longDate, groupLabel } from './ui.js';
+import { $, esc, showMenu, promptDialog, confirmDialog, passwordDialog, changePasswordDialog, smartDialog, importDialog, historyDialog, toast, shortDate, longDate, groupLabel } from './ui.js';
 import { search, matches } from './search.js';
 import { helpDialog } from './help.js';
 import { initUpdates } from './updates.js';
@@ -580,12 +580,25 @@ async function removeLockCurrent() {
   toast(t('toast.lockRemoved'));
 }
 
+async function changePasswordCurrent() {
+  const id = S.currentId;
+  const r = await changePasswordDialog();
+  if (!r) return;
+  await flushSave();
+  const meta = await api.notes.changePassword(id, r.current, r.next);
+  if (!meta) { toast(t('lock.wrong')); return; }
+  Object.assign(noteById(id), meta);
+  S.curUpdated = meta.updated;
+  toast(t('toast.passwordChanged'));
+}
+
 $('#tb-lock').addEventListener('click', (e) => {
   const n = noteById(S.currentId);
   if (!n) return;
   const r = e.currentTarget.getBoundingClientRect();
   showMenu(r.right - 190, r.bottom + 4, n.locked ? [
     { label: t('lock.menu.now'), onClick: async () => { await flushSave(); api.notes.relock(n.id); await openNote(n.id); } },
+    { label: t('lock.menu.change'), onClick: changePasswordCurrent },
     { label: t('lock.menu.remove'), onClick: removeLockCurrent },
   ] : [
     { label: t('lock.menu.set'), onClick: lockCurrent },

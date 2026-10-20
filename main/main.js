@@ -189,6 +189,7 @@ function registerIpc() {
   h('notes:lock', (id, pwd) => store.lockNote(id, pwd));
   h('notes:unlock', (id, pwd) => store.unlockNote(id, pwd));
   h('notes:relock', (id) => store.relock(id));
+  h('notes:changePassword', (id, oldPwd, newPwd) => store.changePassword(id, oldPwd, newPwd));
   h('notes:removeLock', (id, pwd) => store.removeLock(id, pwd));
   h('notes:emptyTrash', () => store.emptyTrash());
 
