@@ -98,7 +98,7 @@ function wikiSuggest(links) {
       if (!selection.empty) return close();
       const $from = selection.$from;
       const before = $from.parent.textBetween(0, $from.parentOffset, undefined, '￼');
-      const m = /\[\[([^\[\]\n]{0,60})$/.exec(before);
+      const m = /\[\[([^[\]\n]{0,60})$/.exec(before);
       if (!m) return close();
       const query = m[1];
       range = { from: selection.from - m[0].length, to: selection.from, query };

@@ -14,7 +14,10 @@
     "dist:linux": "npm run build && electron-builder --linux AppImage deb",
     "dist:win": "npm run build && electron-builder --win nsis portable",
     "dist": "npm run build && electron-builder --linux AppImage deb --win nsis portable",
-    "test": "node --test \"tests/**/*.test.js\""
+    "test": "node --test \"tests/**/*.test.js\"",
+    "lint": "eslint .",
+    "format": "prettier --write \"main/**/*.js\" \"src/**/*.js\" \"tests/**/*.js\" vite.config.mjs",
+    "format:check": "prettier --check \"main/**/*.js\" \"src/**/*.js\" \"tests/**/*.js\" vite.config.mjs"
   },
   "devDependencies": {
     "@eslint/js": "^10.0.1",

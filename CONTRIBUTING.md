@@ -12,6 +12,8 @@ cd libreta
 npm install
 npm run dev      # abre la app con recarga en vivo
 npm test         # pruebas automáticas
+npm run lint     # revisa errores con ESLint
+npm run format   # da formato con Prettier (format:check solo comprueba)
 ```
 
 Tus notas de desarrollo se guardan en `~/Documentos/Libreta` (o en la carpeta que elijas desde **Archivo → Cambiar carpeta de notas**). Usa una carpeta de prueba para no mezclar tus notas reales.
@@ -75,7 +77,7 @@ No escribas textos visibles directamente en el código: la prueba `tests/i18n.te
 1. Busca un [issue](https://github.com/CorreaRicardo98/libreta/issues) (los marcados `good first issue` son buenos para empezar) o abre uno para comentar tu idea antes de programar algo grande.
 2. Crea una rama: `git checkout -b mi-mejora`.
 3. Haz el cambio, con su prueba si toca lógica (`store`, `search`, `importer`).
-4. Corre `npm test` y prueba la app con `npm run dev`.
+4. Corre `npm run format`, `npm run lint` y `npm test`, y prueba la app con `npm run dev`. El CI ejecuta lint, comprobación de formato y pruebas.
 5. Abre un *pull request* usando la plantilla.
 
 ## Criterios del proyecto
@@ -85,7 +87,7 @@ No escribas textos visibles directamente en el código: la prueba `tests/i18n.te
 - **Accesible.** Todo se puede usar con teclado, con foco visible, con movimiento reducido respetado y en ventanas angostas.
 - **Seguro.** No relajes `contextIsolation`, `sandbox` ni la política CSP de `src/index.html`. Todo acceso a archivos pasa por `main/`.
 - **Sin dependencias porque sí.** Cada paquete nuevo pesa en el instalador. Justifica el que agregues.
-- Estilo: JavaScript moderno, 2 espacios, comentarios solo donde el *porqué* no es obvio. Respeta el estilo del código de alrededor.
+- Estilo: Prettier (2 espacios, comillas simples, punto y coma; ver `.prettierrc.json`) y ESLint (`eslint.config.js`). `main/` es CommonJS y `src/` es ESM. Comentarios solo donde el *porqué* no es obvio. Respeta el estilo del código de alrededor.
 
 ## Ideas para empezar
 

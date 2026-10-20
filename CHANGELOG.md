@@ -3,6 +3,9 @@
 Todas las versiones notables de Libreta. El formato sigue [Keep a Changelog](https://keepachangelog.com/es-ES/1.1.0/) y el proyecto usa [versionado semántico](https://semver.org/lang/es/).
 
 ## [Sin publicar]
+### Interno
+- Prettier y ESLint con `npm run format`, `npm run format:check` y `npm run lint`; el CI los ejecuta. El reformateo inicial va en un commit aparte y no cambia la lógica.
+
 ### Agregado
 - **Cambiar la contraseña** de una nota bloqueada (candado → «Cambiar contraseña…»). Se vuelve a cifrar con una sal nueva sin pasar por texto claro en disco. Se borra el historial de versiones de esa nota, porque estaba cifrado con la clave anterior (igual que al bloquear o quitar el bloqueo).
 - La ventana recuerda su tamaño, posición y si estaba maximizada. Si la posición guardada queda fuera de las pantallas, se centra.
