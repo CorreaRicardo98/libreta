@@ -1,5 +1,5 @@
 // Ajustes: apariencia, notas y programa. Los cambios se aplican al instante.
-import { dialog, esc } from './ui.js';
+import { dialog, esc, longDate } from './ui.js';
 import { t } from './i18n.js';
 
 const FONT_STACK = { serif: 'var(--serif)', sans: 'var(--ui)', mono: 'var(--mono)' };
@@ -70,6 +70,32 @@ export function settingsDialog({ prefs, api, vault, view, sort, onView, onSort, 
             <button type="button" data-act="open">${esc(t('set.open'))}</button><button type="button" data-act="change">${esc(t('set.change'))}</button></div>
         </div>
       </section>
+      <section aria-labelledby="s-backup">
+        <h3 id="s-backup">${esc(t('set.backup'))}</h3>
+        <label class="chk set-chk"><input type="checkbox" id="bk-on">
+          <span>${esc(t('set.bk.auto'))}<small>${esc(t('set.bk.autoHint'))}</small></span></label>
+        <div class="set-row">
+          <span class="set-label">${esc(t('set.bk.dir'))}</span>
+          <div class="set-vault"><code id="bk-dir"></code><button type="button" data-bk-act="choose">${esc(t('set.bk.choose'))}</button></div>
+        </div>
+        <div class="set-row">
+          <span class="set-label" id="lb-bk-every">${esc(t('set.bk.every'))}</span>
+          <div class="seg" role="group" aria-labelledby="lb-bk-every">
+            ${['daily', 'weekly'].map((v) => `<button type="button" class="seg-btn txt" data-bk="every" data-val="${v}">${esc(t(`set.bk.every.${v}`))}</button>`).join('')}
+          </div>
+        </div>
+        <div class="set-row">
+          <span class="set-label" id="lb-bk-keep">${esc(t('set.bk.keep'))}</span>
+          <div class="seg" role="group" aria-labelledby="lb-bk-keep">
+            ${[3, 7, 14, 30].map((v) => `<button type="button" class="seg-btn txt" data-bk="keep" data-val="${v}">${v}</button>`).join('')}
+          </div>
+        </div>
+        <div class="set-row">
+          <span class="set-label"></span>
+          <div class="set-vault"><button type="button" id="bk-now" data-bk-act="now">${esc(t('set.bk.now'))}</button><button type="button" data-bk-act="reveal">${esc(t('set.bk.reveal'))}</button></div>
+        </div>
+        <p class="set-hint" id="bk-status" role="status" aria-live="polite"></p>
+      </section>
       <section aria-labelledby="s-app">
         <h3 id="s-app">${esc(t('set.app'))}</h3>
         <label class="chk set-chk"><input type="checkbox" id="set-auto" ${prefs.autoUpdate ? 'checked' : ''}>
@@ -99,7 +125,57 @@ export function settingsDialog({ prefs, api, vault, view, sort, onView, onSort, 
       } // el idioma se aplica al volver a cargar la interfaz
     };
 
+    // ---- copias de seguridad
+    let bk = { enabled: false, dir: '', every: 'daily', keep: 7, last: 0, lastError: '' };
+    const bkStatus = box.querySelector('#bk-status');
+    const paintBackup = (msg) => {
+      box.querySelector('#bk-on').checked = bk.enabled;
+      const dirEl = box.querySelector('#bk-dir');
+      dirEl.textContent = bk.dir || t('set.bk.none');
+      dirEl.title = bk.dir;
+      box.querySelectorAll('[data-bk]').forEach((b) => b.setAttribute('aria-pressed', String(String(bk[b.dataset.bk]) === b.dataset.val)));
+      box.querySelector('#bk-now').disabled = !bk.dir;
+      bkStatus.textContent = msg || (bk.lastError ? t('set.bk.error', { msg: bk.lastError }) : bk.last ? t('set.bk.last', { date: longDate(bk.last) }) : t('set.bk.never'));
+    };
+    api.backup.get().then((c) => {
+      bk = c;
+      paintBackup();
+    });
+    const bkSet = async (patch) => {
+      bk = await api.backup.set(patch);
+      paintBackup();
+    };
+    const bkChoose = async () => {
+      bk = await api.backup.chooseDir();
+      paintBackup();
+      return !!bk.dir;
+    };
+
     box.addEventListener('click', async (e) => {
+      const bkb = e.target.closest('[data-bk]');
+      if (bkb) {
+        await bkSet({ [bkb.dataset.bk]: bkb.dataset.bk === 'keep' ? Number(bkb.dataset.val) : bkb.dataset.val });
+        return;
+      }
+      const bka = e.target.closest('[data-bk-act]')?.dataset.bkAct;
+      if (bka === 'choose') {
+        await bkChoose();
+        return;
+      }
+      if (bka === 'reveal') {
+        api.backup.reveal();
+        return;
+      }
+      if (bka === 'now') {
+        const btn = box.querySelector('#bk-now');
+        btn.disabled = true;
+        btn.textContent = t('set.bk.working');
+        const r = await api.backup.now();
+        bk = r.config;
+        btn.textContent = t('set.bk.now');
+        paintBackup(r.ok ? t('set.bk.done', { name: String(r.file).split(/[\\/]/).pop() }) : null);
+        return;
+      }
       const b = e.target.closest('[data-key]');
       if (b) {
         const k = b.dataset.key;
@@ -112,6 +188,14 @@ export function settingsDialog({ prefs, api, vault, view, sort, onView, onSort, 
         done(null);
         onChangeVault();
       } else if (a === 'reset') await set({ theme: 'system', accent: 'azul', font: 'serif', size: 17, width: 'normal' });
+    });
+    box.querySelector('#bk-on').addEventListener('change', async (e) => {
+      const on = e.target.checked;
+      if (on && !bk.dir && !(await bkChoose())) {
+        e.target.checked = false; // sin carpeta no se puede activar
+        return;
+      }
+      await bkSet({ enabled: on });
     });
     box.querySelector('#set-auto').addEventListener('change', (e) => api.prefs.set({ autoUpdate: e.target.checked }));
     box.querySelector('[data-no]').addEventListener('click', () => done(null));

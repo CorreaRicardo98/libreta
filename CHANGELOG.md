@@ -2,8 +2,9 @@
 
 Todas las versiones notables de Libreta. El formato sigue [Keep a Changelog](https://keepachangelog.com/es-ES/1.1.0/) y el proyecto usa [versionado semántico](https://semver.org/lang/es/).
 
-## [Sin publicar]
+## [1.7.0] - 2026-10-20
 ### Agregado
+- **Copias de seguridad automáticas** (Ajustes → Copias de seguridad). Un `.tar.gz` con fecha (`libreta-AAAA-MM-DD-HHMMSS.tar.gz`) con notas, carpetas, adjuntos, plantillas e historial, cada día o cada semana, en la carpeta que elijas; se conservan las últimas 3, 7, 14 o 30. Botón **Hacer copia ahora**. Las notas bloqueadas siguen cifradas dentro de la copia. Se restaura descomprimiéndola en una carpeta vacía y eligiéndola como carpeta de notas. Sin dependencias nuevas: el tar se escribe a mano.
 - **Plantillas de nota.** «Nueva…» → *Nota desde plantilla…* (o clic derecho en «+»). Vienen tres de fábrica (reunión, diario y lista de compras, en el idioma de la interfaz) y cualquier nota se puede guardar como plantilla desde el menú «…» → *Guardar como plantilla…*. Las propias viven en `templates/` dentro de la carpeta de notas, así que se sincronizan con ellas. Las bóvedas anteriores funcionan igual: la carpeta solo se crea al guardar la primera.
 
 ### Mejorado
