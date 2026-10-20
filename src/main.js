@@ -15,8 +15,20 @@ import { htmlToMarkdown } from './md.js';
 const api = window.libreta;
 const app = $('#app');
 const store = {
-  get: (k, d) => { try { return localStorage.getItem(k) ?? d; } catch { return d; } },
-  set: (k, v) => { try { localStorage.setItem(k, v); } catch { /* sin almacenamiento */ } },
+  get: (k, d) => {
+    try {
+      return localStorage.getItem(k) ?? d;
+    } catch {
+      return d;
+    }
+  },
+  set: (k, v) => {
+    try {
+      localStorage.setItem(k, v);
+    } catch {
+      /* sin almacenamiento */
+    }
+  },
 };
 
 const S = {
@@ -25,7 +37,7 @@ const S = {
   collapsed: new Set(JSON.parse(store.get('collapsed', '[]'))),
   notes: [],
   snips: new Map(),
-  scope: { type: 'all' },        // all | folder | smart | tag | trash
+  scope: { type: 'all' }, // all | folder | smart | tag | trash
   view: store.get('view', 'list'),
   sort: store.get('sort', 'updated'),
   q: '',
@@ -40,10 +52,12 @@ let saveTimer = null;
 // ---------------------------------------------------------------- iconos
 const ICON = {
   all: '<svg viewBox="0 0 20 20"><path d="M5 3.5h7l3 3v10H5z M12 3.5v3h3 M7.5 10h5M7.5 13h5" fill="none" stroke="currentColor" stroke-width="1.4" stroke-linejoin="round" stroke-linecap="round"/></svg>',
-  folder: '<svg viewBox="0 0 20 20"><path d="M3 6.5A1.5 1.5 0 0 1 4.5 5h3.4l1.6 1.8h6A1.5 1.5 0 0 1 17 8.3v6.2a1.5 1.5 0 0 1-1.5 1.5h-11A1.5 1.5 0 0 1 3 14.5z" fill="none" stroke="currentColor" stroke-width="1.4"/></svg>',
+  folder:
+    '<svg viewBox="0 0 20 20"><path d="M3 6.5A1.5 1.5 0 0 1 4.5 5h3.4l1.6 1.8h6A1.5 1.5 0 0 1 17 8.3v6.2a1.5 1.5 0 0 1-1.5 1.5h-11A1.5 1.5 0 0 1 3 14.5z" fill="none" stroke="currentColor" stroke-width="1.4"/></svg>',
   tag: '<svg viewBox="0 0 20 20"><path d="M8 3.5 5 16.5M14 3.5l-3 13M3.5 7.5h13M3 12.5h13" stroke="currentColor" stroke-width="1.4" stroke-linecap="round" fill="none"/></svg>',
   trash: '<svg viewBox="0 0 20 20"><path d="M4.5 6h11M8 6V4.5h4V6M6 6l.7 9.5h6.6L14 6" fill="none" stroke="currentColor" stroke-width="1.4" stroke-linejoin="round" stroke-linecap="round"/></svg>',
-  smart: '<svg viewBox="0 0 20 20"><circle cx="10" cy="10" r="6.5" fill="none" stroke="currentColor" stroke-width="1.4"/><path d="M10 6.5v7M6.5 10h7" stroke="currentColor" stroke-width="1.4" stroke-linecap="round"/><circle cx="10" cy="10" r="2" fill="currentColor"/></svg>',
+  smart:
+    '<svg viewBox="0 0 20 20"><circle cx="10" cy="10" r="6.5" fill="none" stroke="currentColor" stroke-width="1.4"/><path d="M10 6.5v7M6.5 10h7" stroke="currentColor" stroke-width="1.4" stroke-linecap="round"/><circle cx="10" cy="10" r="2" fill="currentColor"/></svg>',
   chevron: '<svg viewBox="0 0 12 12"><path d="m4.5 2.5 3.5 3.5-3.5 3.5" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round"/></svg>',
   lock: '<svg class="lk" viewBox="0 0 20 20"><rect x="4.5" y="9" width="11" height="7.5" rx="1.8" fill="currentColor"/><path d="M7 9V6.8a3 3 0 0 1 6 0V9" fill="none" stroke="currentColor" stroke-width="1.6"/></svg>',
   pin: '<svg class="pin" viewBox="0 0 20 20"><path d="M7 3.5h6l-.8 4 2.3 3H5.5l2.3-3zM10 10.5V17" fill="currentColor" stroke="currentColor" stroke-width="1.4" stroke-linejoin="round" stroke-linecap="round"/></svg>',
@@ -89,15 +103,17 @@ function visibleNotes() {
   }
   let list;
   if (S.scope.type === 'trash') list = S.notes.filter((n) => n.deletedAt);
-  else if (S.scope.type === 'folder') { const ids = folderWithDescendants(S.scope.id); list = live().filter((n) => ids.includes(n.folderId)); }
-  else if (S.scope.type === 'smart') { const sf = smartById(S.scope.id); list = sf ? live().filter((n) => matchesSmart(n, sf.rules)) : []; }
-  else if (S.scope.type === 'tag') list = live().filter((n) => n.tags?.includes(S.scope.id));
+  else if (S.scope.type === 'folder') {
+    const ids = folderWithDescendants(S.scope.id);
+    list = live().filter((n) => ids.includes(n.folderId));
+  } else if (S.scope.type === 'smart') {
+    const sf = smartById(S.scope.id);
+    list = sf ? live().filter((n) => matchesSmart(n, sf.rules)) : [];
+  } else if (S.scope.type === 'tag') list = live().filter((n) => n.tags?.includes(S.scope.id));
   else list = live();
   const key = S.sort === 'created' ? 'created' : 'updated';
-  const cmp = S.sort === 'title'
-    ? (a, b) => (a.title || '~').localeCompare(b.title || '~', locale(), { sensitivity: 'base' })
-    : (a, b) => b[key] - a[key];
-  return list.sort((a, b) => (S.scope.type === 'trash' ? 0 : (b.pinned - a.pinned)) || cmp(a, b));
+  const cmp = S.sort === 'title' ? (a, b) => (a.title || '~').localeCompare(b.title || '~', locale(), { sensitivity: 'base' }) : (a, b) => b[key] - a[key];
+  return list.sort((a, b) => (S.scope.type === 'trash' ? 0 : b.pinned - a.pinned) || cmp(a, b));
 }
 
 async function reload() {
@@ -114,27 +130,45 @@ function renderSide() {
   $('#nav-main').innerHTML = item('data-scope="all"', ICON.all, t('side.allNotes'), live().length, sc.type === 'all', 0, '<span class="twist none"></span>');
 
   $('#smart-block').hidden = !S.smart.length;
-  $('#nav-smart').innerHTML = S.smart.map((sf) =>
-    item(`data-scope="smart" data-id="${esc(sf.id)}"`, ICON.smart, sf.name, live().filter((n) => matchesSmart(n, sf.rules)).length, sc.type === 'smart' && sc.id === sf.id, 0, '<span class="twist none"></span>')).join('');
+  $('#nav-smart').innerHTML = S.smart
+    .map((sf) =>
+      item(
+        `data-scope="smart" data-id="${esc(sf.id)}"`,
+        ICON.smart,
+        sf.name,
+        live().filter((n) => matchesSmart(n, sf.rules)).length,
+        sc.type === 'smart' && sc.id === sf.id,
+        0,
+        '<span class="twist none"></span>',
+      ),
+    )
+    .join('');
 
-  const tree = (pid, depth) => childrenOf(pid).map((f) => {
-    const kids = childrenOf(f.id);
-    const open = !S.collapsed.has(f.id);
-    const ids = scopeIds(f);
-    const twist = kids.length
-      ? `<span class="twist" role="button" tabindex="-1" data-twist="${esc(f.id)}" aria-expanded="${open}" aria-label="${open ? t('side.collapse') : t('side.expand')} ${esc(f.name)}">${ICON.chevron}</span>`
-      : '<span class="twist none"></span>';
-    return item(`data-scope="folder" data-id="${esc(f.id)}"`, ICON.folder, f.name, live().filter((n) => ids.includes(n.folderId)).length, sc.type === 'folder' && sc.id === f.id, depth, twist)
-      + (kids.length && open ? tree(f.id, depth + 1) : '');
-  }).join('');
-  $('#nav-folders').innerHTML = tree(null, 0)
-    + item('data-scope="trash"', ICON.trash, t('side.trash'), S.notes.filter((n) => n.deletedAt).length || '', sc.type === 'trash', 0, '<span class="twist none"></span>');
+  const tree = (pid, depth) =>
+    childrenOf(pid)
+      .map((f) => {
+        const kids = childrenOf(f.id);
+        const open = !S.collapsed.has(f.id);
+        const ids = scopeIds(f);
+        const twist = kids.length
+          ? `<span class="twist" role="button" tabindex="-1" data-twist="${esc(f.id)}" aria-expanded="${open}" aria-label="${open ? t('side.collapse') : t('side.expand')} ${esc(f.name)}">${ICON.chevron}</span>`
+          : '<span class="twist none"></span>';
+        return (
+          item(`data-scope="folder" data-id="${esc(f.id)}"`, ICON.folder, f.name, live().filter((n) => ids.includes(n.folderId)).length, sc.type === 'folder' && sc.id === f.id, depth, twist) +
+          (kids.length && open ? tree(f.id, depth + 1) : '')
+        );
+      })
+      .join('');
+  $('#nav-folders').innerHTML =
+    tree(null, 0) + item('data-scope="trash"', ICON.trash, t('side.trash'), S.notes.filter((n) => n.deletedAt).length || '', sc.type === 'trash', 0, '<span class="twist none"></span>');
 
   const tags = new Map();
   for (const n of live()) for (const t of n.tags || []) tags.set(t, (tags.get(t) || 0) + 1);
   $('#tags-block').hidden = !tags.size;
-  $('#nav-tags').innerHTML = [...tags].sort((a, b) => a[0].localeCompare(b[0], locale()))
-    .map(([t, c]) => item(`data-scope="tag" data-id="${esc(t)}"`, ICON.tag, t, c, sc.type === 'tag' && sc.id === t, 0, '<span class="twist none"></span>')).join('');
+  $('#nav-tags').innerHTML = [...tags]
+    .sort((a, b) => a[0].localeCompare(b[0], locale()))
+    .map(([t, c]) => item(`data-scope="tag" data-id="${esc(t)}"`, ICON.tag, t, c, sc.type === 'tag' && sc.id === t, 0, '<span class="twist none"></span>'))
+    .join('');
 }
 
 function setScope(scope) {
@@ -149,7 +183,8 @@ $('.sidebar').addEventListener('click', (e) => {
   const tw = e.target.closest('[data-twist]');
   if (tw) {
     const id = tw.dataset.twist;
-    if (S.collapsed.has(id)) S.collapsed.delete(id); else S.collapsed.add(id);
+    if (S.collapsed.has(id)) S.collapsed.delete(id);
+    else S.collapsed.add(id);
     store.set('collapsed', JSON.stringify([...S.collapsed]));
     renderSide();
     return;
@@ -165,11 +200,7 @@ $('.sidebar').addEventListener('contextmenu', (e) => {
   e.preventDefault();
   if (b.dataset.scope === 'smart') {
     const sf = smartById(b.dataset.id);
-    showMenu(e.clientX, e.clientY, [
-      { label: t('smart.editRules'), onClick: () => editSmart(sf) },
-      { sep: true },
-      { label: t('smart.delete'), danger: true, onClick: () => deleteSmart(sf) },
-    ]);
+    showMenu(e.clientX, e.clientY, [{ label: t('smart.editRules'), onClick: () => editSmart(sf) }, { sep: true }, { label: t('smart.delete'), danger: true, onClick: () => deleteSmart(sf) }]);
     return;
   }
   const f = S.folders.find((x) => x.id === b.dataset.id);
@@ -185,7 +216,10 @@ $('.sidebar').addEventListener('contextmenu', (e) => {
 
 function folderMoveMenu(x, y, f) {
   const banned = new Set(folderWithDescendants(f.id));
-  const move = async (pid) => { S.folders = await api.folders.move(f.id, pid); renderAll(); };
+  const move = async (pid) => {
+    S.folders = await api.folders.move(f.id, pid);
+    renderAll();
+  };
   showMenu(x, y, [
     { header: t('folder.moveHeader', { name: f.name }) },
     { label: t('folder.topLevel'), checked: !f.parentId, onClick: () => move(null) },
@@ -197,9 +231,14 @@ function folderMoveMenu(x, y, f) {
 $('.sidebar').addEventListener('dragover', (e) => {
   const b = e.target.closest('[data-scope="folder"]');
   document.querySelectorAll('.nav-item.drop').forEach((x) => x !== b && x.classList.remove('drop'));
-  if (b && e.dataTransfer.types.includes('text/x-libreta-note')) { e.preventDefault(); b.classList.add('drop'); }
+  if (b && e.dataTransfer.types.includes('text/x-libreta-note')) {
+    e.preventDefault();
+    b.classList.add('drop');
+  }
 });
-$('.sidebar').addEventListener('dragleave', (e) => { if (!e.relatedTarget || !e.currentTarget.contains(e.relatedTarget)) document.querySelectorAll('.nav-item.drop').forEach((x) => x.classList.remove('drop')); });
+$('.sidebar').addEventListener('dragleave', (e) => {
+  if (!e.relatedTarget || !e.currentTarget.contains(e.relatedTarget)) document.querySelectorAll('.nav-item.drop').forEach((x) => x.classList.remove('drop'));
+});
 $('.sidebar').addEventListener('drop', async (e) => {
   document.querySelectorAll('.nav-item.drop').forEach((x) => x.classList.remove('drop'));
   const b = e.target.closest('[data-scope="folder"]');
@@ -214,7 +253,10 @@ async function newFolder(parentId = null) {
   if (!name) return;
   const f = await api.folders.create(name, parentId);
   S.folders.push(f);
-  if (parentId) { S.collapsed.delete(parentId); store.set('collapsed', JSON.stringify([...S.collapsed])); }
+  if (parentId) {
+    S.collapsed.delete(parentId);
+    store.set('collapsed', JSON.stringify([...S.collapsed]));
+  }
   setScope({ type: 'folder', id: f.id });
 }
 
@@ -239,7 +281,10 @@ async function renameFolder(f) {
 }
 async function deleteFolder(f) {
   const ids = folderWithDescendants(f.id);
-  if (S.folders.length - ids.length < 1) { toast(t('folder.mustKeepOne')); return; }
+  if (S.folders.length - ids.length < 1) {
+    toast(t('folder.mustKeepOne'));
+    return;
+  }
   const n = live().filter((x) => ids.includes(x.folderId)).length;
   const ok = await confirmDialog({
     title: t('folder.deleteTitle', { name: f.name }),
@@ -294,11 +339,15 @@ function renderList() {
     html += `<div class="trash-tools"><span>${esc(t('list.byRelevance'))}</span><button type="button" class="btn-soft" id="btn-save-search">${esc(t('list.saveSearch'))}</button></div>`;
   }
   if (!notes.length) {
-    const msg = S.q.trim() ? [t('empty.noResults.t'), t('empty.noResults.d', { q: S.q.trim() })]
-      : S.scope.type === 'trash' ? [t('empty.trash.t'), t('empty.trash.d')]
-      : S.scope.type === 'smart' ? [t('empty.smart.t'), t('empty.smart.d')]
-      : S.scope.type === 'tag' ? [t('empty.tag.t'), t('empty.tag.d', { tag: S.scope.id })]
-      : [t('empty.none.t'), t('empty.none.d')];
+    const msg = S.q.trim()
+      ? [t('empty.noResults.t'), t('empty.noResults.d', { q: S.q.trim() })]
+      : S.scope.type === 'trash'
+        ? [t('empty.trash.t'), t('empty.trash.d')]
+        : S.scope.type === 'smart'
+          ? [t('empty.smart.t'), t('empty.smart.d')]
+          : S.scope.type === 'tag'
+            ? [t('empty.tag.t'), t('empty.tag.d', { tag: S.scope.id })]
+            : [t('empty.none.t'), t('empty.none.d')];
     const help = S.q.trim() ? `<span class="search-help">${esc(t('search.helpLead'))} ${[1, 2, 3, 4, 5].map((i) => `<code>${esc(t(`search.ex${i}`))}</code>`).join(' ')}</span>` : '';
     el.innerHTML = `${html}<div class="empty-list"><strong>${esc(msg[0])}</strong>${esc(msg[1])}${help}</div>`;
     return;
@@ -307,33 +356,54 @@ function renderList() {
   const showFolder = S.scope.type !== 'folder';
   const groups = [];
   for (const n of notes) {
-    const g = S.q.trim() ? t('group.matches')
-      : S.scope.type === 'trash' ? t('group.deleted')
-      : n.pinned ? t('group.pinned')
-      : S.sort === 'title' ? t('group.notes')
-      : groupLabel(S.sort === 'created' ? n.created : n.updated);
+    const g = S.q.trim()
+      ? t('group.matches')
+      : S.scope.type === 'trash'
+        ? t('group.deleted')
+        : n.pinned
+          ? t('group.pinned')
+          : S.sort === 'title'
+            ? t('group.notes')
+            : groupLabel(S.sort === 'created' ? n.created : n.updated);
     const last = groups[groups.length - 1];
-    if (last?.name === g) last.items.push(n); else groups.push({ name: g, items: [n] });
+    if (last?.name === g) last.items.push(n);
+    else groups.push({ name: g, items: [n] });
   }
   const when = (n) => (S.scope.type === 'trash' ? n.deletedAt : S.sort === 'created' ? n.created : n.updated);
   for (const g of groups) {
     html += `<div class="grp">${esc(g.name)}</div>`;
     if (S.view === 'gallery') {
-      html += '<div class="cards">' + g.items.map((n) => `
+      html +=
+        '<div class="cards">' +
+        g.items
+          .map(
+            (n) => `
         <button type="button" class="card" draggable="true" data-id="${n.id}" ${n.id === S.currentId ? 'aria-current="true"' : ''}>
           <div class="card-body ${n.thumb ? 'has-img' : ''}">
-            ${n.locked ? `<div class="card-t">${ICON.lock}${esc(t('note.locked'))}</div><div class="card-p">${esc(t('note.lockedDesc'))}</div>`
-              : n.thumb ? `<img src="${esc(n.thumb)}" alt="" loading="lazy">` : `<div class="card-t">${esc(n.title || t('note.newDefault'))}</div><div class="card-p">${esc(n.preview)}</div>`}
+            ${
+              n.locked
+                ? `<div class="card-t">${ICON.lock}${esc(t('note.locked'))}</div><div class="card-p">${esc(t('note.lockedDesc'))}</div>`
+                : n.thumb
+                  ? `<img src="${esc(n.thumb)}" alt="" loading="lazy">`
+                  : `<div class="card-t">${esc(n.title || t('note.newDefault'))}</div><div class="card-p">${esc(n.preview)}</div>`
+            }
           </div>
           <div class="card-foot">${n.thumb && !n.locked ? `<b>${esc(n.title || t('note.newDefault'))}</b>` : ''}${n.pinned ? ICON.pin : ''}${esc(shortDate(when(n)))}</div>
-        </button>`).join('') + '</div>';
+        </button>`,
+          )
+          .join('') +
+        '</div>';
     } else {
-      html += g.items.map((n) => `
+      html += g.items
+        .map(
+          (n) => `
         <button type="button" class="note" draggable="true" data-id="${n.id}" ${n.id === S.currentId ? 'aria-current="true"' : ''}>
           <div class="note-t">${n.pinned ? ICON.pin : ''}${n.locked ? ICON.lock : ''}${esc(n.locked ? t('note.locked') : n.title || t('note.newDefault'))}</div>
           <div class="note-m"><span class="d">${esc(shortDate(when(n)))}</span><span class="p">${esc(n.locked ? t('note.protected') : S.snips.get(n.id) || n.preview || t('note.noExtra'))}</span></div>
           ${showFolder ? `<div class="note-f">${esc(folderName(n.folderId))}</div>` : ''}
-        </button>`).join('');
+        </button>`,
+        )
+        .join('');
     }
   }
   el.innerHTML = html;
@@ -341,8 +411,14 @@ function renderList() {
 
 const listEl = $('#list');
 listEl.addEventListener('click', (e) => {
-  if (e.target.closest('#btn-empty-trash')) { emptyTrash(); return; }
-  if (e.target.closest('#btn-save-search')) { saveSearch(); return; }
+  if (e.target.closest('#btn-empty-trash')) {
+    emptyTrash();
+    return;
+  }
+  if (e.target.closest('#btn-save-search')) {
+    saveSearch();
+    return;
+  }
   const b = e.target.closest('[data-id]');
   if (b) openNote(b.dataset.id);
 });
@@ -365,7 +441,10 @@ listEl.addEventListener('keydown', (e) => {
     e.preventDefault();
     const all = [...listEl.querySelectorAll('[data-id]')];
     const next = all[all.indexOf(b) + (e.key === 'ArrowDown' ? 1 : -1)];
-    if (next) { next.focus(); openNote(next.dataset.id, { keepFocus: true }); }
+    if (next) {
+      next.focus();
+      openNote(next.dataset.id, { keepFocus: true });
+    }
   } else if (e.key === 'Delete') {
     const n = noteById(b.dataset.id);
     if (n && !n.deletedAt) trashNote(n.id);
@@ -394,7 +473,11 @@ function noteMenu(x, y, id) {
 
 $('#btn-sort').addEventListener('click', (e) => {
   const r = e.currentTarget.getBoundingClientRect();
-  const set = (v) => () => { S.sort = v; store.set('sort', v); renderList(); };
+  const set = (v) => () => {
+    S.sort = v;
+    store.set('sort', v);
+    renderList();
+  };
   showMenu(r.left, r.bottom + 4, [
     { header: t('sort.header') },
     { label: t('sort.updated'), checked: S.sort === 'updated', onClick: set('updated') },
@@ -402,7 +485,11 @@ $('#btn-sort').addEventListener('click', (e) => {
     { label: t('sort.title'), checked: S.sort === 'title', onClick: set('title') },
   ]);
 });
-const setView = (v) => { S.view = v; store.set('view', v); renderList(); };
+const setView = (v) => {
+  S.view = v;
+  store.set('view', v);
+  renderList();
+};
 $('#v-list').addEventListener('click', () => setView('list'));
 $('#v-gallery').addEventListener('click', () => setView('gallery'));
 
@@ -421,7 +508,13 @@ async function saveSearch() {
   setScope({ type: 'smart', id: S.smart[S.smart.length - 1].id });
   toast(t('toast.searchSaved'));
 }
-$('#search').addEventListener('keydown', (e) => { if (e.key === 'Escape') { e.target.value = ''; S.q = ''; renderList(); } });
+$('#search').addEventListener('keydown', (e) => {
+  if (e.key === 'Escape') {
+    e.target.value = '';
+    S.q = '';
+    renderList();
+  }
+});
 
 // ---------------------------------------------------------------- acciones sobre notas
 async function newNote(folderId) {
@@ -431,7 +524,8 @@ async function newNote(folderId) {
   const { html, ...meta } = n;
   S.notes.push(meta);
   if (S.scope.type === 'trash' || S.scope.type === 'tag' || S.scope.type === 'smart' || (S.scope.type === 'folder' && S.scope.id !== meta.folderId)) S.scope = { type: 'folder', id: meta.folderId };
-  S.q = ''; $('#search').value = '';
+  S.q = '';
+  $('#search').value = '';
   renderAll();
   await openNote(n.id, { focus: true });
 }
@@ -462,7 +556,10 @@ async function trashNote(id) {
   const list = visibleNotes();
   renderAll();
   toast(t('toast.trashed'));
-  if (id === S.currentId) { if (list[0]) await openNote(list[0].id); else closeNote(); }
+  if (id === S.currentId) {
+    if (list[0]) await openNote(list[0].id);
+    else closeNote();
+  }
 }
 
 async function restoreNote(id) {
@@ -497,7 +594,11 @@ async function openNote(id, { focus = false, keepFocus = false } = {}) {
     if (S.currentId && noteById(S.currentId)?.locked) api.notes.relock(S.currentId);
   }
   const n = await api.notes.get(id);
-  if (!n) { await reload(); toast(t('toast.noteGone')); return; }
+  if (!n) {
+    await reload();
+    toast(t('toast.noteGone'));
+    return;
+  }
   S.currentId = id;
   S.curUpdated = n.updated;
   S.dirty = false;
@@ -517,7 +618,11 @@ function showNote(n, { focus = false, keepFocus = false } = {}) {
   S.loading = false;
   $('#doc-date').textContent = longDate(n.updated);
   $('#trash-bar').hidden = !n.deletedAt;
-  $('#toolbar').querySelectorAll('button, select').forEach((b) => { if (!b.classList.contains('only-narrow')) b.disabled = !!n.deletedAt; });
+  $('#toolbar')
+    .querySelectorAll('button, select')
+    .forEach((b) => {
+      if (!b.classList.contains('only-narrow')) b.disabled = !!n.deletedAt;
+    });
   updateStatus('');
   syncToolbar();
   $('#doc-scroll').scrollTop = 0;
@@ -537,14 +642,21 @@ function showLock(keepFocus) {
   $('#lock-screen').hidden = false;
   $('#lock-pass').value = '';
   $('#lock-error').textContent = '';
-  if (!keepFocus) { app.dataset.pane = 'editor'; $('#lock-pass').focus(); }
+  if (!keepFocus) {
+    app.dataset.pane = 'editor';
+    $('#lock-pass').focus();
+  }
 }
 
 $('#lock-form').addEventListener('submit', async (e) => {
   e.preventDefault();
   const id = S.currentId;
   const n = await api.notes.unlock(id, $('#lock-pass').value);
-  if (!n) { $('#lock-error').textContent = t('lock.wrong'); $('#lock-pass').select(); return; }
+  if (!n) {
+    $('#lock-error').textContent = t('lock.wrong');
+    $('#lock-pass').select();
+    return;
+  }
   S.curUpdated = n.updated;
   showNote(n, {});
   editor.commands.focus('end');
@@ -553,13 +665,21 @@ $('#lock-form').addEventListener('submit', async (e) => {
 async function lockCurrent() {
   const id = S.currentId;
   const pwd = await passwordDialog({
-    title: t('lock.title'), confirm: true, ok: t('lock.ok'),
+    title: t('lock.title'),
+    confirm: true,
+    ok: t('lock.ok'),
     text: t('lock.warn'),
   });
-  if (!pwd) { editor.commands.focus(); return; }
+  if (!pwd) {
+    editor.commands.focus();
+    return;
+  }
   await flushSave();
   const meta = await api.notes.lock(id, pwd);
-  if (!meta) { toast(t('toast.lockFailed')); return; }
+  if (!meta) {
+    toast(t('toast.lockFailed'));
+    return;
+  }
   Object.assign(noteById(id), meta);
   renderAll();
   await openNote(id);
@@ -572,7 +692,10 @@ async function removeLockCurrent() {
   if (!pwd) return;
   await flushSave();
   const meta = await api.notes.removeLock(id, pwd);
-  if (!meta) { toast(t('lock.wrong')); return; }
+  if (!meta) {
+    toast(t('lock.wrong'));
+    return;
+  }
   Object.assign(noteById(id), meta, { locked: false });
   S.notes = await api.notes.list();
   renderAll();
@@ -586,7 +709,10 @@ async function changePasswordCurrent() {
   if (!r) return;
   await flushSave();
   const meta = await api.notes.changePassword(id, r.current, r.next);
-  if (!meta) { toast(t('lock.wrong')); return; }
+  if (!meta) {
+    toast(t('lock.wrong'));
+    return;
+  }
   Object.assign(noteById(id), meta);
   S.curUpdated = meta.updated;
   toast(t('toast.passwordChanged'));
@@ -596,13 +722,24 @@ $('#tb-lock').addEventListener('click', (e) => {
   const n = noteById(S.currentId);
   if (!n) return;
   const r = e.currentTarget.getBoundingClientRect();
-  showMenu(r.right - 190, r.bottom + 4, n.locked ? [
-    { label: t('lock.menu.now'), onClick: async () => { await flushSave(); api.notes.relock(n.id); await openNote(n.id); } },
-    { label: t('lock.menu.change'), onClick: changePasswordCurrent },
-    { label: t('lock.menu.remove'), onClick: removeLockCurrent },
-  ] : [
-    { label: t('lock.menu.set'), onClick: lockCurrent },
-  ]);
+  showMenu(
+    r.right - 190,
+    r.bottom + 4,
+    n.locked
+      ? [
+          {
+            label: t('lock.menu.now'),
+            onClick: async () => {
+              await flushSave();
+              api.notes.relock(n.id);
+              await openNote(n.id);
+            },
+          },
+          { label: t('lock.menu.change'), onClick: changePasswordCurrent },
+          { label: t('lock.menu.remove'), onClick: removeLockCurrent },
+        ]
+      : [{ label: t('lock.menu.set'), onClick: lockCurrent }],
+  );
 });
 
 function closeNote() {
@@ -664,7 +801,9 @@ const TB = {
   scan: [() => doScan(), () => false],
 };
 
-$('#toolbar').addEventListener('mousedown', (e) => { if (e.target.closest('button')) e.preventDefault(); });
+$('#toolbar').addEventListener('mousedown', (e) => {
+  if (e.target.closest('button')) e.preventDefault();
+});
 $('#toolbar').addEventListener('click', (e) => {
   const b = e.target.closest('[data-cmd]');
   if (b) TB[b.dataset.cmd][0]();
@@ -680,8 +819,7 @@ $('#tb-style').addEventListener('change', (e) => {
 function syncToolbar() {
   if (!editor) return;
   for (const b of $('#toolbar').querySelectorAll('[data-cmd]')) b.setAttribute('aria-pressed', String(!!TB[b.dataset.cmd][1]()));
-  const style = editor.isActive('codeBlock') ? 'code'
-    : [1, 2, 3].map((l) => editor.isActive('heading', { level: l }) && `h${l}`).find(Boolean) || 'p';
+  const style = editor.isActive('codeBlock') ? 'code' : [1, 2, 3].map((l) => editor.isActive('heading', { level: l }) && `h${l}`).find(Boolean) || 'p';
   $('#tb-style').value = style;
   const n = noteById(S.currentId);
   $('#tb-lock').setAttribute('aria-pressed', String(!!n?.locked));
@@ -693,7 +831,10 @@ function syncToolbar() {
 async function editLink() {
   const prev = editor.getAttributes('link').href || '';
   const url = await promptDialog({ title: t('link.title'), value: prev, placeholder: 'https://…', ok: t('link.apply') });
-  if (url === null) { editor.commands.focus(); return; }
+  if (url === null) {
+    editor.commands.focus();
+    return;
+  }
   if (!url) editor.chain().focus().extendMarkRange('link').unsetLink().run();
   else editor.chain().focus().extendMarkRange('link').setLink({ href: url }).run();
 }
@@ -753,39 +894,82 @@ async function exportNote(kind) {
 }
 
 async function shareNote(how) {
-  const title = editor.getText().split('\n').find((l) => l.trim())?.trim() || t('share.defaultTitle');
+  const title =
+    editor
+      .getText()
+      .split('\n')
+      .find((l) => l.trim())
+      ?.trim() || t('share.defaultTitle');
   try {
-    if (how === 'text') { await navigator.clipboard.writeText(editor.getText({ blockSeparator: '\n\n' })); toast(t('toast.copiedText')); }
-    else if (how === 'md-copy') { await navigator.clipboard.writeText(htmlToMarkdown(editor.getHTML())); toast(t('toast.copiedMd')); }
-    else if (how === 'mail') {
+    if (how === 'text') {
+      await navigator.clipboard.writeText(editor.getText({ blockSeparator: '\n\n' }));
+      toast(t('toast.copiedText'));
+    } else if (how === 'md-copy') {
+      await navigator.clipboard.writeText(htmlToMarkdown(editor.getHTML()));
+      toast(t('toast.copiedMd'));
+    } else if (how === 'mail') {
       const body = editor.getText({ blockSeparator: '\n\n' });
       const cut = body.length > 1500;
       window.open(`mailto:?subject=${encodeURIComponent(title)}&body=${encodeURIComponent(cut ? body.slice(0, 1500) + '…' : body)}`);
       if (cut) toast(t('toast.mailCut'));
     }
-  } catch { toast(t('toast.copyFailed')); }
+  } catch {
+    toast(t('toast.copyFailed'));
+  }
 }
 
 // ---------------------------------------------------------------- navegación, menú y eventos del sistema
 $('#btn-new').addEventListener('click', () => newNote());
-$('#btn-side').addEventListener('click', () => { app.dataset.pane = 'side'; });
-$('#btn-back').addEventListener('click', () => { app.dataset.pane = 'list'; });
+$('#btn-side').addEventListener('click', () => {
+  app.dataset.pane = 'side';
+});
+$('#btn-back').addEventListener('click', () => {
+  app.dataset.pane = 'list';
+});
 
 api.on('menu', async (cmd) => {
   switch (cmd) {
-    case 'new-note': newNote(); break;
-    case 'new-folder': newFolder(); break;
-    case 'import': importNotes(); break;
-    case 'help': openHelp('start'); break;
-    case 'help-keys': openHelp('keys'); break;
-    case 'export-pdf': exportNote('pdf'); break;
-    case 'export-html': exportNote('html'); break;
-    case 'export-md': exportNote('md'); break;
-    case 'focus-search': app.dataset.pane = 'list'; $('#search').focus(); $('#search').select(); break;
-    case 'view-list': setView('list'); break;
-    case 'view-gallery': setView('gallery'); break;
-    case 'change-vault': changeVault(); break;
-    case 'settings': openSettings(); break;
+    case 'new-note':
+      newNote();
+      break;
+    case 'new-folder':
+      newFolder();
+      break;
+    case 'import':
+      importNotes();
+      break;
+    case 'help':
+      openHelp('start');
+      break;
+    case 'help-keys':
+      openHelp('keys');
+      break;
+    case 'export-pdf':
+      exportNote('pdf');
+      break;
+    case 'export-html':
+      exportNote('html');
+      break;
+    case 'export-md':
+      exportNote('md');
+      break;
+    case 'focus-search':
+      app.dataset.pane = 'list';
+      $('#search').focus();
+      $('#search').select();
+      break;
+    case 'view-list':
+      setView('list');
+      break;
+    case 'view-gallery':
+      setView('gallery');
+      break;
+    case 'change-vault':
+      changeVault();
+      break;
+    case 'settings':
+      openSettings();
+      break;
   }
 });
 
@@ -794,12 +978,19 @@ api.on('notes:external-change', async () => {
   [S.folders, S.notes, S.smart] = await Promise.all([api.folders.list(), api.notes.list(), api.smart.list()]);
   renderAll();
   const cur = S.currentId && noteById(S.currentId);
-  if (S.currentId && !cur) { closeNote(); return; }
+  if (S.currentId && !cur) {
+    closeNote();
+    return;
+  }
   if (cur && !S.dirty && cur.updated > S.curUpdated) await openNote(S.currentId, { keepFocus: true });
 });
 
-window.addEventListener('beforeunload', () => { flushSave(); });
-document.addEventListener('visibilitychange', () => { if (document.hidden) flushSave(); });
+window.addEventListener('beforeunload', () => {
+  flushSave();
+});
+document.addEventListener('visibilitychange', () => {
+  if (document.hidden) flushSave();
+});
 
 // ---------------------------------------------------------------- enlaces entre notas
 function linkTitle(id) {
@@ -827,7 +1018,10 @@ async function createLinkedNote(title) {
 
 async function openLinked(id) {
   const n = noteById(id);
-  if (!n) { toast(t('toast.noteGone')); return; }
+  if (!n) {
+    toast(t('toast.noteGone'));
+    return;
+  }
   if (n.deletedAt) toast(t('toast.noteInTrash'));
   await openNote(id);
 }
@@ -851,14 +1045,24 @@ async function openHistory() {
   if (!id) return;
   await flushSave();
   const versions = await api.history.list(id);
-  if (!versions.length) { toast(t('history.none')); return; }
+  if (!versions.length) {
+    toast(t('history.none'));
+    return;
+  }
   const t = await historyDialog({
-    versions, fmt: longDate,
+    versions,
+    fmt: longDate,
     load: (when) => api.history.get(id, when),
   });
-  if (!t) { editor.commands.focus(); return; }
+  if (!t) {
+    editor.commands.focus();
+    return;
+  }
   const n = await api.history.restore(id, t);
-  if (!n) { toast(t('history.restoreFailed')); return; }
+  if (!n) {
+    toast(t('history.restoreFailed'));
+    return;
+  }
   S.notes = await api.notes.list();
   S.curUpdated = n.updated;
   showNote(n, {});
@@ -869,17 +1073,33 @@ async function openHistory() {
 // ---------------------------------------------------------------- ajustes
 async function changeVault() {
   await flushSave();
-  if (await api.vault.change()) { S.currentId = null; closeNote(); await reload(); toast(t('toast.vaultChanged')); }
+  if (await api.vault.change()) {
+    S.currentId = null;
+    closeNote();
+    await reload();
+    toast(t('toast.vaultChanged'));
+  }
 }
 
 async function openSettings() {
   const [prefs, vault] = await Promise.all([api.prefs.get(), api.vault.info()]);
   await settingsDialog({
-    prefs, api, vault: vault.dir, view: S.view, sort: S.sort,
+    prefs,
+    api,
+    vault: vault.dir,
+    view: S.view,
+    sort: S.sort,
     onView: setView,
-    onSort: (v) => { S.sort = v; store.set('sort', v); renderList(); },
+    onSort: (v) => {
+      S.sort = v;
+      store.set('sort', v);
+      renderList();
+    },
     onChangeVault: changeVault,
-    onLanguage: async () => { await flushSave(); location.reload(); },
+    onLanguage: async () => {
+      await flushSave();
+      location.reload();
+    },
   });
 }
 $('#btn-settings').addEventListener('click', openSettings);
@@ -898,12 +1118,25 @@ async function openHelp(tab = 'start') {
     return;
   }
   switch (r.act) {
-    case 'new-folder': await newFolder(); break;
-    case 'smart': await editSmart(null); break;
-    case 'import': await importNotes(); break;
-    case 'open-vault': await api.vault.open(); break;
-    case 'settings': await openSettings(); break;
-    case 'search': app.dataset.pane = 'list'; $('#search').focus(); break;
+    case 'new-folder':
+      await newFolder();
+      break;
+    case 'smart':
+      await editSmart(null);
+      break;
+    case 'import':
+      await importNotes();
+      break;
+    case 'open-vault':
+      await api.vault.open();
+      break;
+    case 'settings':
+      await openSettings();
+      break;
+    case 'search':
+      app.dataset.pane = 'list';
+      $('#search').focus();
+      break;
   }
 }
 $('#btn-help').addEventListener('click', () => openHelp());
@@ -915,12 +1148,17 @@ async function importNotes() {
   await flushSave();
   const r = await api.importNotes(kind);
   if (!r) return;
-  if (!r.items.length) { toast(t('toast.importNone')); return; }
+  if (!r.items.length) {
+    toast(t('toast.importNone'));
+    return;
+  }
   const tmp = createEditor({ element: document.createElement('div'), links: { getTitle: () => null, onOpen() {}, suggest: () => [], create: async () => '' } });
   const key = (t) => String(t).normalize('NFD').replace(/\p{M}/gu, '').toLowerCase().trim();
   const ids = r.items.map(() => crypto.randomUUID());
   const byTitle = new Map();
-  r.items.forEach((it, i) => { if (!byTitle.has(key(it.title))) byTitle.set(key(it.title), ids[i]); });
+  r.items.forEach((it, i) => {
+    if (!byTitle.has(key(it.title))) byTitle.set(key(it.title), ids[i]);
+  });
   const folderIds = new Map();
   let done = 0;
   try {
@@ -944,7 +1182,9 @@ async function importNotes() {
       done++;
       if (done % 15 === 0) toast(t('toast.importing', { done, total: r.items.length }));
     }
-  } finally { tmp.destroy(); }
+  } finally {
+    tmp.destroy();
+  }
   await reload();
   S.scope = { type: 'all' };
   renderAll();
@@ -953,7 +1193,11 @@ async function importNotes() {
 }
 
 // ---------------------------------------------------------------- arranque
-function renderAll() { renderSide(); renderList(); renderBacklinks(); }
+function renderAll() {
+  renderSide();
+  renderList();
+  renderBacklinks();
+}
 
 const task = (done, text) => `<li data-type="taskItem" data-checked="${done}"><label><input type="checkbox" ${done ? 'checked' : ''}><span></span></label><div><p>${text}</p></div></li>`;
 // La nota de bienvenida se escribe en el idioma de la interfaz (los textos son de la app, no de la persona)
@@ -968,7 +1212,10 @@ const welcomeHtml = () => `<h1>${t('welcome.title')}</h1>
 async function start() {
   initUpdates({ flush: flushSave, toast });
   editor = createEditor({
-    element: $('#editor'), onUpdate: onEditorUpdate, onSelection: syncToolbar, onLink: editLink,
+    element: $('#editor'),
+    onUpdate: onEditorUpdate,
+    onSelection: syncToolbar,
+    onLink: editLink,
     links: { getTitle: linkTitle, onOpen: openLinked, suggest: suggestNotes, create: createLinkedNote },
   });
   app.dataset.pane = 'list';

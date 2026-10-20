@@ -15,7 +15,14 @@ export function applyPrefs(p) {
   r.style.setProperty('--doc-width', WIDTH_REM[p.width] || WIDTH_REM.normal);
 }
 
-const ACCENTS = [['azul', '#2640c4'], ['verde', '#0f7a55'], ['violeta', '#6b3fd1'], ['coral', '#c23b3b'], ['ambar', '#a85d00'], ['grafito', '#374151']];
+const ACCENTS = [
+  ['azul', '#2640c4'],
+  ['verde', '#0f7a55'],
+  ['violeta', '#6b3fd1'],
+  ['coral', '#c23b3b'],
+  ['ambar', '#a85d00'],
+  ['grafito', '#374151'],
+];
 
 /** Fila con botones segmentados. Las etiquetas se buscan en set.<clave>.<valor>. */
 const seg = (key, values) => `
@@ -81,18 +88,30 @@ export function settingsDialog({ prefs, api, vault, view, sort, onView, onSort, 
       const { view: v, sort: s, ...appearance } = patch;
       if (v) onView(v);
       if (s) onSort(s);
-      if (Object.keys(appearance).length) { Object.assign(state, await api.prefs.set(appearance)); applyPrefs(state); }
+      if (Object.keys(appearance).length) {
+        Object.assign(state, await api.prefs.set(appearance));
+        applyPrefs(state);
+      }
       paint();
-      if (patch.language) { done(null); onLanguage(); } // el idioma se aplica al volver a cargar la interfaz
+      if (patch.language) {
+        done(null);
+        onLanguage();
+      } // el idioma se aplica al volver a cargar la interfaz
     };
 
     box.addEventListener('click', async (e) => {
       const b = e.target.closest('[data-key]');
-      if (b) { const k = b.dataset.key; await set({ [k]: k === 'size' ? Number(b.dataset.val) : b.dataset.val }); return; }
+      if (b) {
+        const k = b.dataset.key;
+        await set({ [k]: k === 'size' ? Number(b.dataset.val) : b.dataset.val });
+        return;
+      }
       const a = e.target.closest('[data-act]')?.dataset.act;
       if (a === 'open') api.vault.open();
-      else if (a === 'change') { done(null); onChangeVault(); }
-      else if (a === 'reset') await set({ theme: 'system', accent: 'azul', font: 'serif', size: 17, width: 'normal' });
+      else if (a === 'change') {
+        done(null);
+        onChangeVault();
+      } else if (a === 'reset') await set({ theme: 'system', accent: 'azul', font: 'serif', size: 17, width: 'normal' });
     });
     box.querySelector('#set-auto').addEventListener('change', (e) => api.prefs.set({ autoUpdate: e.target.checked }));
     box.querySelector('[data-no]').addEventListener('click', () => done(null));

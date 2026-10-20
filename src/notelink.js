@@ -20,13 +20,17 @@ export const NoteLink = Node.create({
     };
   },
 
-  parseHTML() { return [{ tag: 'a[data-note-link]' }]; },
+  parseHTML() {
+    return [{ tag: 'a[data-note-link]' }];
+  },
 
   renderHTML({ node }) {
     return ['a', { 'data-note-link': node.attrs.id, href: '#', class: 'note-link' }, node.attrs.label];
   },
 
-  renderText({ node }) { return `[[${node.attrs.label}]]`; },
+  renderText({ node }) {
+    return `[[${node.attrs.label}]]`;
+  },
 
   addNodeView() {
     const { getTitle, onOpen } = this.options;
@@ -39,7 +43,11 @@ export const NoteLink = Node.create({
       dom.contentEditable = 'false';
       dom.textContent = live || node.attrs.label || t('share.defaultTitle');
       dom.title = live == null ? t('link.missing') : t('link.open');
-      dom.addEventListener('click', (e) => { e.preventDefault(); e.stopPropagation(); onOpen(node.attrs.id); });
+      dom.addEventListener('click', (e) => {
+        e.preventDefault();
+        e.stopPropagation();
+        onOpen(node.attrs.id);
+      });
       return { dom };
     };
   },

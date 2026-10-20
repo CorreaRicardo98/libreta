@@ -32,9 +32,7 @@ class Store {
     fs.mkdirSync(this.notesDir, { recursive: true });
     fs.mkdirSync(this.attDir, { recursive: true });
     if (!fs.existsSync(this.foldersFile)) {
-      this._writeAtomic(this.foldersFile, JSON.stringify([
-        { id: newId(), name: this.defaultFolderName, parentId: null, created: Date.now() },
-      ], null, 2));
+      this._writeAtomic(this.foldersFile, JSON.stringify([{ id: newId(), name: this.defaultFolderName, parentId: null, created: Date.now() }], null, 2));
     }
     this.purgeTrash();
   }
@@ -54,20 +52,32 @@ class Store {
   listFolders() {
     try {
       return JSON.parse(fs.readFileSync(this.foldersFile, 'utf8')).map((f) => ({ parentId: null, ...f }));
-    } catch { return []; }
+    } catch {
+      return [];
+    }
   }
-  _saveFolders(list) { this._writeAtomic(this.foldersFile, JSON.stringify(list, null, 2)); }
+  _saveFolders(list) {
+    this._writeAtomic(this.foldersFile, JSON.stringify(list, null, 2));
+  }
   _descendants(list, id) {
     const out = [];
-    const walk = (p) => { for (const f of list) if (f.parentId === p) { out.push(f.id); walk(f.id); } };
+    const walk = (p) => {
+      for (const f of list)
+        if (f.parentId === p) {
+          out.push(f.id);
+          walk(f.id);
+        }
+    };
     walk(id);
     return out;
   }
   createFolder(name, parentId = null) {
     const list = this.listFolders();
     const f = {
-      id: newId(), name: String(name || 'Carpeta nueva').slice(0, 80),
-      parentId: list.some((x) => x.id === parentId) ? parentId : null, created: Date.now(),
+      id: newId(),
+      name: String(name || 'Carpeta nueva').slice(0, 80),
+      parentId: list.some((x) => x.id === parentId) ? parentId : null,
+      created: Date.now(),
     };
     list.push(f);
     this._saveFolders(list);
@@ -107,23 +117,33 @@ class Store {
 
   // ---- carpetas inteligentes
   listSmart() {
-    try { return JSON.parse(fs.readFileSync(this.smartFile, 'utf8')); } catch { return []; }
+    try {
+      return JSON.parse(fs.readFileSync(this.smartFile, 'utf8'));
+    } catch {
+      return [];
+    }
   }
   saveSmart(sf) {
     const list = this.listSmart();
     const r = sf.rules || {};
     const clean = {
-      id: sf.id || newId(), name: String(sf.name || 'Carpeta inteligente').slice(0, 80),
+      id: sf.id || newId(),
+      name: String(sf.name || 'Carpeta inteligente').slice(0, 80),
       rules: {
         tags: (r.tags || []).map(String).slice(0, 20),
         text: String(r.text || '').slice(0, 100),
         query: String(r.query || '').slice(0, 200),
         folderId: r.folderId || '',
-        tasks: !!r.tasks, images: !!r.images, files: !!r.files, tables: !!r.tables, pinned: !!r.pinned,
+        tasks: !!r.tasks,
+        images: !!r.images,
+        files: !!r.files,
+        tables: !!r.tables,
+        pinned: !!r.pinned,
       },
     };
     const i = list.findIndex((x) => x.id === clean.id);
-    if (i >= 0) list[i] = clean; else list.push(clean);
+    if (i >= 0) list[i] = clean;
+    else list.push(clean);
     this._writeAtomic(this.smartFile, JSON.stringify(list, null, 2));
     return list;
   }
@@ -138,21 +158,32 @@ class Store {
     const out = [];
     for (const f of fs.readdirSync(this.notesDir)) {
       if (!f.endsWith('.json')) continue;
-      try { out.push(JSON.parse(fs.readFileSync(path.join(this.notesDir, f), 'utf8'))); }
-      catch { /* archivo a medio sincronizar: se ignora */ }
+      try {
+        out.push(JSON.parse(fs.readFileSync(path.join(this.notesDir, f), 'utf8')));
+      } catch {
+        /* archivo a medio sincronizar: se ignora */
+      }
     }
     return out;
   }
-  _write(n) { this._writeAtomic(this._notePath(n.id), JSON.stringify(n)); }
+  _write(n) {
+    this._writeAtomic(this._notePath(n.id), JSON.stringify(n));
+  }
   _raw(id) {
-    try { return JSON.parse(fs.readFileSync(this._notePath(id), 'utf8')); } catch { return null; }
+    try {
+      return JSON.parse(fs.readFileSync(this._notePath(id), 'utf8'));
+    } catch {
+      return null;
+    }
   }
   _meta(n) {
     const { html, lock, ...meta } = n;
     return { ...meta, flags: flagsOf(html || ''), links: linksOf(html || '') };
   }
 
-  list() { return this._readAll().map((n) => this._meta(n)); }
+  list() {
+    return this._readAll().map((n) => this._meta(n));
+  }
 
   /** Nota lista para el editor. Si está bloqueada y sin clave, devuelve solo metadatos (html: null). */
   get(id) {
@@ -163,16 +194,28 @@ class Store {
     try {
       const { lock, ...rest } = n;
       return { ...rest, ...decrypt(key, lock) };
-    } catch { this.keys.delete(id); return { ...this._meta(n), html: null }; }
+    } catch {
+      this.keys.delete(id);
+      return { ...this._meta(n), html: null };
+    }
   }
 
   create(folderId) {
     const folders = this.listFolders();
     const now = Date.now();
     const n = {
-      id: newId(), title: '', preview: '', thumb: '', html: '', text: '', tags: [],
+      id: newId(),
+      title: '',
+      preview: '',
+      thumb: '',
+      html: '',
+      text: '',
+      tags: [],
       folderId: folders.some((f) => f.id === folderId) ? folderId : folders[0].id,
-      pinned: false, created: now, updated: now, deletedAt: null,
+      pinned: false,
+      created: now,
+      updated: now,
+      deletedAt: null,
     };
     this._write(n);
     return n;
@@ -211,8 +254,14 @@ class Store {
     const salt = crypto.randomBytes(16);
     const key = crypto.scryptSync(password, salt, 32, SCRYPT);
     const n = {
-      ...cur, locked: true,
-      title: '', preview: '', thumb: '', html: '', text: '', tags: [],
+      ...cur,
+      locked: true,
+      title: '',
+      preview: '',
+      thumb: '',
+      html: '',
+      text: '',
+      tags: [],
       lock: encrypt(key, pick(cur, SECRET_FIELDS), salt.toString('base64')),
     };
     this._write(n);
@@ -228,9 +277,13 @@ class Store {
       decrypt(key, cur.lock); // lanza si la contraseña es incorrecta
       this.keys.set(id, key);
       return this.get(id);
-    } catch { return null; }
+    } catch {
+      return null;
+    }
   }
-  relock(id) { this.keys.delete(id); }
+  relock(id) {
+    this.keys.delete(id);
+  }
   /** Cambia la contraseña sin dejar la nota en claro. Con la actual incorrecta no toca nada. */
   changePassword(id, oldPassword, newPassword) {
     const cur = this._raw(id);
@@ -239,7 +292,9 @@ class Store {
     try {
       const oldKey = crypto.scryptSync(String(oldPassword), Buffer.from(cur.lock.salt, 'base64'), 32, SCRYPT);
       secret = decrypt(oldKey, cur.lock); // lanza si la contraseña actual es incorrecta
-    } catch { return null; }
+    } catch {
+      return null;
+    }
     const salt = crypto.randomBytes(16);
     const key = crypto.scryptSync(String(newPassword), salt, 32, SCRYPT);
     const n = { ...cur, lock: encrypt(key, secret, salt.toString('base64')), updated: Date.now() };
@@ -268,8 +323,14 @@ class Store {
   }
   _histTimes(id) {
     try {
-      return fs.readdirSync(this._histPath(id)).filter((f) => /^\d+\.json$/.test(f)).map((f) => Number(f.slice(0, -5))).sort((a, b) => b - a);
-    } catch { return []; }
+      return fs
+        .readdirSync(this._histPath(id))
+        .filter((f) => /^\d+\.json$/.test(f))
+        .map((f) => Number(f.slice(0, -5)))
+        .sort((a, b) => b - a);
+    } catch {
+      return [];
+    }
   }
   _snapshot(cur, force = false) {
     if (!cur || (!cur.locked && !cur.html)) return;
@@ -277,35 +338,57 @@ class Store {
     const now = Date.now();
     if (!force && times[0] && now - times[0] < HIST_GAP) return;
     const dir = this._histPath(cur.id);
-    const data = cur.locked
-      ? { t: now, locked: true, lock: cur.lock }
-      : { t: now, ...pick(cur, SECRET_FIELDS) };
+    const data = cur.locked ? { t: now, locked: true, lock: cur.lock } : { t: now, ...pick(cur, SECRET_FIELDS) };
     if (times[0]) {
       try {
         const last = JSON.parse(fs.readFileSync(path.join(dir, `${times[0]}.json`), 'utf8'));
         if (!cur.locked && last.html === data.html) return; // sin cambios desde la última versión
         if (cur.locked && last.lock?.data === data.lock.data) return;
-      } catch { /* versión ilegible: se guarda otra */ }
+      } catch {
+        /* versión ilegible: se guarda otra */
+      }
     }
     fs.mkdirSync(dir, { recursive: true });
     this._writeAtomic(path.join(dir, `${now}.json`), JSON.stringify(data));
-    for (const t of times.slice(HIST_MAX - 1)) { try { fs.unlinkSync(path.join(dir, `${t}.json`)); } catch { /* ya no está */ } }
+    for (const t of times.slice(HIST_MAX - 1)) {
+      try {
+        fs.unlinkSync(path.join(dir, `${t}.json`));
+      } catch {
+        /* ya no está */
+      }
+    }
   }
-  _clearHistory(id) { try { fs.rmSync(this._histPath(id), { recursive: true, force: true }); } catch { /* sin historial */ } }
+  _clearHistory(id) {
+    try {
+      fs.rmSync(this._histPath(id), { recursive: true, force: true });
+    } catch {
+      /* sin historial */
+    }
+  }
   _readVersion(id, t) {
     if (!/^\d+$/.test(String(t))) return null;
     let v;
-    try { v = JSON.parse(fs.readFileSync(path.join(this._histPath(id), `${t}.json`), 'utf8')); } catch { return null; }
+    try {
+      v = JSON.parse(fs.readFileSync(path.join(this._histPath(id), `${t}.json`), 'utf8'));
+    } catch {
+      return null;
+    }
     if (!v.locked) return v;
     const key = this.keys.get(id);
     if (!key) return null;
-    try { return { t: v.t, ...decrypt(key, v.lock) }; } catch { return null; }
+    try {
+      return { t: v.t, ...decrypt(key, v.lock) };
+    } catch {
+      return null;
+    }
   }
   listVersions(id) {
-    return this._histTimes(id).map((t) => {
-      const v = this._readVersion(id, t);
-      return v ? { t, title: v.title || '', preview: v.preview || '', chars: (v.text || '').length } : null;
-    }).filter(Boolean);
+    return this._histTimes(id)
+      .map((t) => {
+        const v = this._readVersion(id, t);
+        return v ? { t, title: v.title || '', preview: v.preview || '', chars: (v.text || '').length } : null;
+      })
+      .filter(Boolean);
   }
   getVersion(id, t) {
     const v = this._readVersion(id, t);
@@ -334,7 +417,10 @@ class Store {
     for (const raw of segments) {
       const name = String(raw || 'Sin nombre').slice(0, 80);
       let f = list.find((x) => (x.parentId || null) === parent && x.name === name);
-      if (!f) { f = { id: newId(), name, parentId: parent, created: Date.now() }; list.push(f); }
+      if (!f) {
+        f = { id: newId(), name, parentId: parent, created: Date.now() };
+        list.push(f);
+      }
       parent = f.id;
     }
     this._saveFolders(list);
@@ -348,7 +434,10 @@ class Store {
       ...Object.fromEntries(SECRET_FIELDS.map((k) => [k, k === 'tags' ? [] : ''])),
       ...pick(d, SECRET_FIELDS),
       folderId: folders.some((f) => f.id === d.folderId) ? d.folderId : folders[0].id,
-      pinned: false, created: d.created || now, updated: d.updated || now, deletedAt: null,
+      pinned: false,
+      created: d.created || now,
+      updated: d.updated || now,
+      deletedAt: null,
     };
     this._write(n);
     return this._meta(n);
@@ -367,8 +456,18 @@ class Store {
     if (!this.listFolders().some((f) => f.id === n.folderId)) n.folderId = this.listFolders()[0].id;
     this._write(n);
   }
-  purge(id) { this.keys.delete(id); this._clearHistory(id); try { fs.unlinkSync(this._notePath(id)); } catch { /* ya no existe */ } }
-  emptyTrash() { for (const n of this._readAll()) if (n.deletedAt) this.purge(n.id); }
+  purge(id) {
+    this.keys.delete(id);
+    this._clearHistory(id);
+    try {
+      fs.unlinkSync(this._notePath(id));
+    } catch {
+      /* ya no existe */
+    }
+  }
+  emptyTrash() {
+    for (const n of this._readAll()) if (n.deletedAt) this.purge(n.id);
+  }
   purgeTrash() {
     const limit = Date.now() - TRASH_DAYS * 864e5;
     for (const n of this._readAll()) if (n.deletedAt && n.deletedAt < limit) this.purge(n.id);
@@ -376,12 +475,19 @@ class Store {
 
   // ---- adjuntos
   saveAttachment(name, bytes) {
-    const ext = path.extname(String(name)).toLowerCase().replace(/[^.a-z0-9]/g, '').slice(0, 8) || '.bin';
+    const ext =
+      path
+        .extname(String(name))
+        .toLowerCase()
+        .replace(/[^.a-z0-9]/g, '')
+        .slice(0, 8) || '.bin';
     const file = `${newId()}${ext}`;
     fs.writeFileSync(path.join(this.attDir, file), Buffer.from(bytes));
     return file;
   }
-  attachmentPath(file) { return path.join(this.attDir, path.basename(file)); }
+  attachmentPath(file) {
+    return path.join(this.attDir, path.basename(file));
+  }
 }
 
 function flagsOf(html) {
@@ -410,7 +516,13 @@ function decrypt(key, lock) {
   return JSON.parse(out.toString('utf8'));
 }
 
-function newId() { return crypto.randomUUID(); }
-function pick(o, keys) { const r = {}; for (const k of keys) if (k in o) r[k] = o[k]; return r; }
+function newId() {
+  return crypto.randomUUID();
+}
+function pick(o, keys) {
+  const r = {};
+  for (const k of keys) if (k in o) r[k] = o[k];
+  return r;
+}
 
 module.exports = { Store, TRASH_DAYS };

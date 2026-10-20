@@ -60,7 +60,10 @@ test('historial: guarda versiones espaciadas y restaura', () => {
   for (const f of fs.readdirSync(dir)) fs.renameSync(path.join(dir, f), path.join(dir, `${Number(f.slice(0, -5)) - 6 * 60e3}.json`));
   s.save({ id: n.id, title: 'v3', html: '<p>tres</p>', text: 'tres' });
   const versions = s.listVersions(n.id);
-  assert.deepEqual(versions.map((v) => v.title), ['v2', 'v1']);
+  assert.deepEqual(
+    versions.map((v) => v.title),
+    ['v2', 'v1'],
+  );
   assert.equal(s.restoreVersion(n.id, versions[1].t).title, 'v1');
 });
 

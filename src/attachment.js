@@ -26,7 +26,9 @@ export const Attachment = Node.create({
     };
   },
 
-  parseHTML() { return [{ tag: 'div[data-type="attachment"]' }]; },
+  parseHTML() {
+    return [{ tag: 'div[data-type="attachment"]' }];
+  },
 
   renderHTML({ node }) {
     const { src, name, size } = node.attrs;

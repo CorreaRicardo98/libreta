@@ -18,7 +18,7 @@ const CHECK_EVERY = 6 * 60 * 60 * 1000;
 function createUpdater({ send, getAuto }) {
   const portable = !!process.env.PORTABLE_EXECUTABLE_DIR;
   let au = null;
-  let manual = false;      // la búsqueda la pidió la persona
+  let manual = false; // la búsqueda la pidió la persona
   let downloading = false; // la descarga la pidió la persona
   let timer = null;
 
@@ -29,14 +29,24 @@ function createUpdater({ send, getAuto }) {
     au.autoInstallOnAppQuit = true;
     au.allowPrerelease = false;
     au.logger = null;
-    au.on('update-available', (i) => { send({ state: 'available', version: i.version, manual, canInstall: true }); manual = false; });
-    au.on('update-not-available', () => { if (manual) send({ state: 'none', current: app.getVersion() }); manual = false; });
+    au.on('update-available', (i) => {
+      send({ state: 'available', version: i.version, manual, canInstall: true });
+      manual = false;
+    });
+    au.on('update-not-available', () => {
+      if (manual) send({ state: 'none', current: app.getVersion() });
+      manual = false;
+    });
     au.on('download-progress', (p) => send({ state: 'downloading', percent: Math.round(p.percent || 0) }));
-    au.on('update-downloaded', (i) => { downloading = false; send({ state: 'ready', version: i.version }); });
+    au.on('update-downloaded', (i) => {
+      downloading = false;
+      send({ state: 'ready', version: i.version });
+    });
     au.on('error', (e) => {
       // las búsquedas automáticas fallan en silencio (sin internet, por ejemplo)
       if (manual || downloading) send({ state: 'error', message: String(e?.message || e).slice(0, 240) });
-      manual = false; downloading = false;
+      manual = false;
+      downloading = false;
     });
   }
 
@@ -54,28 +64,45 @@ function createUpdater({ send, getAuto }) {
   }
 
   async function check({ manual: m = false } = {}) {
-    if (!app.isPackaged) { if (m) send({ state: 'dev' }); return; }
+    if (!app.isPackaged) {
+      if (m) send({ state: 'dev' });
+      return;
+    }
     manual = m;
     if (portable) return checkPortable(m);
     init();
-    try { await au.checkForUpdates(); } catch { /* el evento 'error' ya lo informó si hacía falta */ }
+    try {
+      await au.checkForUpdates();
+    } catch {
+      /* el evento 'error' ya lo informó si hacía falta */
+    }
   }
 
   async function download() {
     if (!au) return;
     downloading = true;
     send({ state: 'downloading', percent: 0 });
-    try { await au.downloadUpdate(); } catch { /* el evento 'error' lo informa */ }
+    try {
+      await au.downloadUpdate();
+    } catch {
+      /* el evento 'error' lo informa */
+    }
   }
 
   // silent: instala sin asistente y vuelve a abrir la app
-  function install() { au?.quitAndInstall(true, true); }
+  function install() {
+    au?.quitAndInstall(true, true);
+  }
 
   function start() {
     clearInterval(timer);
     if (!app.isPackaged) return;
-    setTimeout(() => { if (getAuto()) check(); }, 8000);
-    timer = setInterval(() => { if (getAuto()) check(); }, CHECK_EVERY);
+    setTimeout(() => {
+      if (getAuto()) check();
+    }, 8000);
+    timer = setInterval(() => {
+      if (getAuto()) check();
+    }, CHECK_EVERY);
     timer.unref?.();
   }
 
