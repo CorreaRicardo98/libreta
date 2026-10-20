@@ -16,6 +16,7 @@ const CARDS = [
   ['lock'],
   ['share'],
   ['import', 'import'],
+  ['backup', 'settings'],
   ['settings', 'settings'],
   ['updates'],
   ['vault', 'open-vault'],

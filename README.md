@@ -61,7 +61,7 @@ Para esto Libreta consulta, cada pocas horas, la lista de versiones de GitHub. N
 - **Encontrar**: búsqueda que ignora acentos, tolera errores de escritura y ordena por relevancia. Con filtros como `tag:ideas`, `carpeta:trabajo`, `tiene:imagen`, `es:fijada`, `antes:2026-01-31`, `"frase exacta"` y `-excluir`.
 - **Conectar ideas**: escribe `[[` para enlazar otra nota; cada nota muestra qué otras la mencionan.
 - **No perder nada**: **historial de versiones** de cada nota, con restauración.
-- **Proteger**: **notas bloqueadas con contraseña** (AES-256-GCM).
+- **Proteger**: **notas bloqueadas con contraseña** (AES-256-GCM) y **copias de seguridad automáticas** en un `.tar.gz` con fecha (Ajustes → Copias de seguridad).
 - **Traer lo que ya tienes**: importa desde carpetas de Markdown, texto o HTML (Joplin, Obsidian, Bear, Notion; Apple Notes exportada con una herramienta de terceros) y desde Evernote (`.enex`).
 - **Compartir y exportar**: copiar como texto o Markdown, enviar por correo, exportar a PDF, HTML o Markdown.
 - **Ajustes** (`Ctrl+,`): tema automático, claro u oscuro, seis colores de acento, letra y tamaño del texto de las notas, ancho de la página, vista y orden de la lista, carpeta de notas y actualizaciones.

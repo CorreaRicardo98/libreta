@@ -8,6 +8,7 @@ const { createUpdater } = require('./updater');
 const prefsLib = require('./prefs');
 const i18n = require('./i18n');
 const windowState = require('./windowstate');
+const backupLib = require('./backup');
 
 const DEV = !!process.env.LIBRETA_DEV;
 let win = null;
@@ -52,6 +53,35 @@ function setPrefs(patch) {
   applyTheme();
   if (autoChanged || getPrefs().lang !== langBefore) buildMenu(); // la casilla de Ayuda y los textos del menú deben reflejar el cambio
   return getPrefs();
+}
+// ---- copias de seguridad (.tar.gz con fecha). La configuración vive en settings.json, no en la bóveda.
+const getBackup = () => backupLib.sanitizeConfig(readSettings().backup);
+function saveBackup(patch) {
+  const next = backupLib.sanitizeConfig({ ...getBackup(), ...patch });
+  writeSettings({ ...readSettings(), backup: next });
+  return next;
+}
+let backupRunning = false;
+async function runBackupNow() {
+  const cfg = getBackup();
+  if (!cfg.dir) return { ok: false, config: saveBackup({ lastError: T('backup.noDir') }) };
+  if (backupRunning) return { ok: false, config: cfg };
+  backupRunning = true;
+  try {
+    const r = await backupLib.runBackup({ vaultDir: store.dir, destDir: cfg.dir, keep: cfg.keep });
+    return { ok: true, file: r.file, config: saveBackup({ last: Date.now(), lastError: '' }) };
+  } catch (e) {
+    return { ok: false, config: saveBackup({ lastError: String(e?.message || e).slice(0, 300) }) };
+  } finally {
+    backupRunning = false;
+  }
+}
+function startBackupSchedule() {
+  const tick = () => {
+    if (backupLib.isDue(getBackup())) runBackupNow();
+  };
+  setTimeout(tick, 30e3); // un poco después de abrir, para no competir con el arranque
+  setInterval(tick, 30 * 60e3).unref();
 }
 const defaultVault = () => path.join(app.getPath('documents'), 'Libreta');
 
@@ -267,6 +297,24 @@ function registerIpc() {
     return store.dir;
   });
 
+  h('backup:get', () => getBackup());
+  h('backup:set', (patch) => {
+    const p = patch && typeof patch === 'object' ? patch : {};
+    const allowed = {};
+    for (const k of ['enabled', 'every', 'keep']) if (p[k] !== undefined) allowed[k] = p[k]; // solo estas claves; la carpeta se elige con su diálogo
+    return saveBackup(allowed);
+  });
+  h('backup:chooseDir', async () => {
+    const r = await dialog.showOpenDialog(win, { title: T('backup.chooseTitle'), properties: ['openDirectory', 'createDirectory'], defaultPath: getBackup().dir || app.getPath('documents') });
+    if (r.canceled || !r.filePaths[0]) return getBackup();
+    return saveBackup({ dir: r.filePaths[0], lastError: '' });
+  });
+  h('backup:now', () => runBackupNow());
+  h('backup:reveal', () => {
+    const d = getBackup().dir;
+    return d ? shell.openPath(d) : '';
+  });
+
   h('export:note', async (kind, title, html) => {
     const safe = (title || T('note.untitled')).replace(/[\\/:*?"<>|]/g, '_').slice(0, 80);
     const ext = kind === 'pdf' ? 'pdf' : kind === 'md' ? 'md' : 'html';
@@ -358,6 +406,7 @@ else {
     watchVault();
     updater = createUpdater({ send: (p) => win?.webContents.send('update', p), getAuto: autoUpdates });
     updater.start();
+    startBackupSchedule();
   });
   app.on('window-all-closed', () => app.quit());
 }

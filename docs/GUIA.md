@@ -18,7 +18,7 @@ Esta guía recorre cada función de Libreta con pasos concretos. Los nombres de 
 12. [Importar](#12-importar)
 13. [Exportar y compartir](#13-exportar-y-compartir)
 14. [Ajustes e idioma](#14-ajustes-e-idioma)
-15. [Tus notas son archivos](#15-tus-notas-son-archivos)
+15. [Copias de seguridad y tus notas](#15-copias-de-seguridad-y-tus-notas)
 16. [Atajos de teclado](#16-atajos-de-teclado)
 
 ---
@@ -163,7 +163,19 @@ Menú `…` del editor:
 
 **Ayuda → Buscar actualizaciones…** comprueba si hay una versión nueva; nada se instala sin que lo aceptes.
 
-## 15. Tus notas son archivos
+## 15. Copias de seguridad y tus notas
+
+### Copias de seguridad
+**Ajustes → Copias de seguridad** guarda un archivo `libreta-AAAA-MM-DD-HHMMSS.tar.gz` con tus notas, carpetas, adjuntos, plantillas e historial.
+
+1. Activa **Hacer copias automáticas** y elige la **Carpeta de las copias** (mejor en otro disco o en una carpeta sincronizada).
+2. Elige la **Frecuencia** (cada día o cada semana) y cuántas **copias se conservan** (3, 7, 14 o 30); las más antiguas se borran solas.
+3. **Hacer copia ahora** crea una al instante y **Abrir carpeta** la muestra.
+4. Las notas bloqueadas siguen **cifradas** dentro de la copia.
+
+**Restaurar:** descomprime el `.tar.gz` en una carpeta vacía (`tar -xzf copia.tar.gz -C carpeta`, o 7-Zip / el administrador de archivos) y elígela con **Archivo → Cambiar carpeta de notas…**.
+
+### Tus notas son archivos
 
 Cada nota es un archivo JSON en tu carpeta de notas (por defecto `Documentos/Libreta`).
 

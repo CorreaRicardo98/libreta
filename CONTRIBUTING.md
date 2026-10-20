@@ -60,6 +60,8 @@ history/<id>/*.json versiones anteriores de cada nota
 attachments/*       imágenes y archivos adjuntos
 ```
 
+Las copias de seguridad (`main/backup.js`) son un `.tar.gz` con ese mismo árbol; su configuración (carpeta, frecuencia) vive en `settings.json` del programa, **no** en la bóveda. No hay dependencias: el tar (ustar) se escribe a mano y gzip es el de Node.
+
 **Importante:** el formato de estos archivos es una promesa a quien ya tiene notas. Si cambias algo, hazlo de forma compatible hacia atrás y añade una prueba en `tests/`.
 
 ## Idiomas
