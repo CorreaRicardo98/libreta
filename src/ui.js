@@ -166,6 +166,27 @@ export function passwordDialog({ title, text = '', confirm = false, ok = tr('ui.
   });
 }
 
+/** Elegir plantilla. Resuelve con { use: plantilla }, { del: plantilla } (solo las propias) o null. */
+export function templateDialog({ builtin, mine }) {
+  return dialog((box, done) => {
+    const all = [...builtin, ...mine];
+    const row = (tpl, own) =>
+      `<li class="tpl-row"><button type="button" class="tpl-use" data-use="${all.indexOf(tpl)}">${esc(tpl.name)}</button>${own ? `<button type="button" class="tpl-del" data-del="${all.indexOf(tpl)}" aria-label="${esc(tr('tpl.dlg.delete', { name: tpl.name }))}" title="${esc(tr('tpl.dlg.delete', { name: tpl.name }))}">×</button>` : ''}</li>`;
+    box.innerHTML = `<h2>${esc(tr('tpl.dlg.title'))}</h2>
+      <h3 class="tpl-h">${esc(tr('tpl.dlg.builtin'))}</h3><ul class="tpl-list">${builtin.map((x) => row(x, false)).join('')}</ul>
+      <h3 class="tpl-h">${esc(tr('tpl.dlg.mine'))}</h3>${mine.length ? `<ul class="tpl-list">${mine.map((x) => row(x, true)).join('')}</ul>` : `<p class="muted" style="margin:0">${esc(tr('tpl.dlg.none'))}</p>`}
+      <div class="row"><button type="button" data-no>${esc(tr('ui.cancel'))}</button></div>`;
+    box.addEventListener('click', (e) => {
+      const use = e.target.closest('[data-use]');
+      const del = e.target.closest('[data-del]');
+      if (use) done({ use: all[Number(use.dataset.use)] });
+      else if (del) done({ del: all[Number(del.dataset.del)] });
+    });
+    box.querySelector('[data-no]').addEventListener('click', () => done(null));
+    setTimeout(() => box.querySelector('.tpl-use')?.focus());
+  });
+}
+
 /** Cambio de contraseña: actual + nueva dos veces. Resuelve con { current, next } o null. */
 export function changePasswordDialog() {
   return dialog((box, done) => {
@@ -330,6 +351,7 @@ export function shortDate(t) {
   if (diff < 7 * DAY) return fmt({ weekday: 'long' }).format(t);
   return fmt({ day: '2-digit', month: '2-digit', year: '2-digit' }).format(t);
 }
+export const dayDate = (t) => fmt({ dateStyle: 'full' }).format(t);
 export const longDate = (t) => fmt({ dateStyle: 'long', timeStyle: 'short' }).format(t);
 
 export function groupLabel(t) {

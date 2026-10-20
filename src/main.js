@@ -1,5 +1,22 @@
+import { builtinTemplates } from './templates.js';
 import { t, tn, setLang, translateDom, locale } from './i18n.js';
-import { $, esc, showMenu, promptDialog, confirmDialog, passwordDialog, changePasswordDialog, smartDialog, importDialog, historyDialog, toast, shortDate, longDate, groupLabel } from './ui.js';
+import {
+  $,
+  esc,
+  showMenu,
+  promptDialog,
+  confirmDialog,
+  passwordDialog,
+  changePasswordDialog,
+  templateDialog,
+  smartDialog,
+  importDialog,
+  historyDialog,
+  toast,
+  shortDate,
+  longDate,
+  groupLabel,
+} from './ui.js';
 import { search, matches } from './search.js';
 import { helpDialog } from './help.js';
 import { initUpdates } from './updates.js';
@@ -298,6 +315,10 @@ async function deleteFolder(f) {
   await reload();
   if (S.currentId && noteById(S.currentId)?.deletedAt) await openNote(S.currentId);
 }
+$('#btn-new').addEventListener('contextmenu', (e) => {
+  e.preventDefault();
+  newFromTemplate();
+});
 $('#btn-new-folder').addEventListener('click', (e) => {
   const r = e.currentTarget.getBoundingClientRect();
   const cur = S.scope.type === 'folder' ? S.folders.find((f) => f.id === S.scope.id) : null;
@@ -306,6 +327,7 @@ $('#btn-new-folder').addEventListener('click', (e) => {
     ...(cur ? [{ label: t('folder.subOfMenu', { name: cur.name }), onClick: () => newFolder(cur.id) }] : []),
     { label: t('folder.smartMenu'), onClick: () => editSmart(null) },
     { sep: true },
+    { label: t('tpl.menu.new'), onClick: newFromTemplate },
     { label: t('folder.importMenu'), onClick: importNotes },
   ]);
 });
@@ -517,10 +539,18 @@ $('#search').addEventListener('keydown', (e) => {
 });
 
 // ---------------------------------------------------------------- acciones sobre notas
-async function newNote(folderId) {
+async function newNote(folderId, tpl) {
   await flushSave();
   const target = folderId || (S.scope.type === 'folder' ? S.scope.id : undefined);
-  const n = await api.notes.create(target);
+  let n = await api.notes.create(target);
+  if (tpl) {
+    // el título, la vista previa y las etiquetas salen del contenido, igual que al escribir a mano
+    const tmp = createEditor({ element: document.createElement('div') });
+    tmp.commands.setContent(tpl.html);
+    const snap = snapshot(tmp);
+    tmp.destroy();
+    n = { ...n, ...(await api.notes.save({ id: n.id, ...snap })) };
+  }
   const { html, ...meta } = n;
   S.notes.push(meta);
   if (S.scope.type === 'trash' || S.scope.type === 'tag' || S.scope.type === 'smart' || (S.scope.type === 'folder' && S.scope.id !== meta.folderId)) S.scope = { type: 'folder', id: meta.folderId };
@@ -528,6 +558,30 @@ async function newNote(folderId) {
   $('#search').value = '';
   renderAll();
   await openNote(n.id, { focus: true });
+}
+
+async function newFromTemplate() {
+  for (;;) {
+    const mine = await api.templates.list();
+    const r = await templateDialog({ builtin: builtinTemplates(), mine });
+    if (!r) return;
+    if (r.use) return newNote(undefined, r.use);
+    const ok = await confirmDialog({ title: t('tpl.dlg.deleteTitle', { name: r.del.name }), text: t('tpl.dlg.deleteText'), ok: t('tpl.dlg.deleteOk') });
+    if (ok) await api.templates.remove(r.del.id);
+  }
+}
+
+async function saveAsTemplate() {
+  const n = noteById(S.currentId);
+  if (!n) return;
+  if (n.locked) {
+    toast(t('toast.tplLocked'));
+    return;
+  }
+  const name = await promptDialog({ title: t('tpl.save.title'), value: n.title || '', placeholder: t('tpl.save.ph'), ok: t('tpl.save.ok') });
+  if (!name) return;
+  const tpl = await api.templates.save({ name, html: editor.getHTML() });
+  toast(tpl ? t('toast.tplSaved', { name: tpl.name }) : t('toast.tplFailed'));
 }
 
 async function togglePin(id) {
@@ -868,6 +922,7 @@ $('#tb-menu').addEventListener('click', (e) => {
     ...S.folders.map((f) => ({ label: folderPath(f.id), checked: f.id === n.folderId, onClick: () => moveNote(id, f.id) })),
     { sep: true },
     { label: t('menu.history'), onClick: openHistory },
+    { label: t('tpl.menu.save'), onClick: saveAsTemplate },
     { sep: true },
     { header: t('share.header') },
     { label: t('share.text'), onClick: () => shareNote('text') },
@@ -1126,6 +1181,9 @@ async function openHelp(tab = 'start') {
       break;
     case 'import':
       await importNotes();
+      break;
+    case 'templates':
+      await newFromTemplate();
       break;
     case 'open-vault':
       await api.vault.open();

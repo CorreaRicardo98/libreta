@@ -199,6 +199,9 @@ function registerIpc() {
   h('notes:restore', (id) => store.restore(id));
   h('notes:purge', (id) => store.purge(id));
   h('notes:createFull', (d) => store.createFull(d));
+  h('templates:list', () => store.listTemplates());
+  h('templates:save', (t) => store.saveTemplate(t));
+  h('templates:delete', (id) => store.deleteTemplate(id));
   h('history:list', (id) => store.listVersions(id));
   h('history:get', (id, t) => store.getVersion(id, t));
   h('history:restore', (id, t) => store.restoreVersion(id, t));
