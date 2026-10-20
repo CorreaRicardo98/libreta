@@ -153,14 +153,14 @@ function importFolder(store, dir) {
 }
 
 /** Archivos sueltos. */
-function importLoose(store, list) {
+function importLoose(store, list, folderName = 'Importadas') {
   const files = list.map((f) => path.resolve(f));
   const rootDirs = [...new Set(files.map((f) => path.dirname(f)))];
   const resolvers = new Map(rootDirs.map((d) => [d, makeResolver(d, walk(d).slice(0, 2000))]));
   const merged = { items: [], skipped: [] };
   for (const f of files) {
     const d = path.dirname(f);
-    const r = importFiles(store, [f], d, resolvers.get(d), () => ['Importadas']);
+    const r = importFiles(store, [f], d, resolvers.get(d), () => [folderName]);
     merged.items.push(...r.items);
     merged.skipped.push(...r.skipped);
   }

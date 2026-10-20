@@ -78,7 +78,7 @@ function termScore(e, term) {
 const HAS = {
   imagen: 'images', imagenes: 'images', foto: 'images', fotos: 'images', image: 'images', images: 'images',
   tarea: 'tasks', tareas: 'tasks', task: 'tasks', tasks: 'tasks',
-  adjunto: 'files', adjuntos: 'files', archivo: 'files', archivos: 'files', file: 'files', files: 'files',
+  adjunto: 'files', adjuntos: 'files', archivo: 'files', archivos: 'files', file: 'files', files: 'files', attachment: 'files', attachments: 'files',
   tabla: 'tables', tablas: 'tables', table: 'tables', tables: 'tables',
 };
 

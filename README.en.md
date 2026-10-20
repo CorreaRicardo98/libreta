@@ -15,7 +15,7 @@ For Windows and Linux. No accounts, no cloud, no tracking.
 
 Libreta brings the workflow of Apple Notes to Windows and Linux — folders, list and gallery views, checklists, tables, attachments, drawing and document scanning — with its own design and your notes kept as **plain files you control**.
 
-> The interface is currently **in Spanish only**. Translating it is one of the most welcome contributions: see [ROADMAP.md](ROADMAP.md).
+> The interface is available in **English and Spanish**. Libreta follows your system language and you can change it in **Settings → Language**. Adding another language is just a JSON file: see [CONTRIBUTING.md](CONTRIBUTING.md).
 
 ## Install
 

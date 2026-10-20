@@ -23,7 +23,7 @@ Ideas ordenadas por cuánto ayudan a quien usa la app. No hay fechas: si algo te
 - [ ] Instalador para macOS (el código ya es multiplataforma; falta compilarlo y probarlo).
 
 ## Comunidad
-- [ ] **Traducción de la interfaz** (hoy solo está en español; falta inglés y el mecanismo para elegir idioma).
+- [x] **Traducción de la interfaz**: español e inglés, con selector en Ajustes. Faltan más idiomas (¡agrega el tuyo!).
 - [ ] Revisión de accesibilidad con lectores de pantalla.
 - [ ] Más pruebas automáticas, sobre todo de la interfaz.
 

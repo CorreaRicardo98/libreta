@@ -23,6 +23,7 @@ main/            Proceso principal de Electron (Node.js)
   main.js          ventana, menú, IPC, exportación a PDF/HTML/Markdown
   store.js         almacén de notas en archivos: carpetas, cifrado, historial, carpetas inteligentes
   prefs.js         preferencias de apariencia: valores permitidos y por defecto
+  i18n.js          textos del proceso principal (menú, diálogos del sistema); lee los mismos archivos de idioma
   updater.js       actualización desde las Releases de GitHub (electron-updater)
   importer.js      importadores: Markdown/HTML/texto y Evernote (.enex)
   preload.js       puente seguro entre la interfaz y el proceso principal (window.libreta)
@@ -34,6 +35,8 @@ src/             Interfaz (HTML + JavaScript sin framework, empaquetada con Vite
   notelink.js      nodo de enlace entre notas
   draw.js          dibujo a mano y escáner con cámara
   md.js            conversor HTML → Markdown
+  i18n.js          idiomas: t('clave'), plurales con tn() y traducción del HTML estático
+  locales/         textos de la interfaz: es.json y en.json (claves planas)
   settings.js      ventana de Ajustes y aplicación de las preferencias
   help.js          guía rápida (Ayuda → Guía rápida): tarjetas, filtros y atajos
   ui.js            menús, diálogos, avisos, fechas
@@ -55,6 +58,17 @@ attachments/*       imágenes y archivos adjuntos
 ```
 
 **Importante:** el formato de estos archivos es una promesa a quien ya tiene notas. Si cambias algo, hazlo de forma compatible hacia atrás y añade una prueba en `tests/`.
+
+## Idiomas
+
+Todos los textos de la interfaz están en `src/locales/<idioma>.json`, con claves planas (`"side.allNotes": "All notes"`). En el código se usa `t('clave')`, `t('clave', { variable })` para los `{variables}` y `tn('clave', n)` para plurales (`clave.one` / `clave.other`). En el HTML estático se usan los atributos `data-i18n`, `data-i18n-title`, `data-i18n-label` y `data-i18n-ph`.
+
+**Para agregar un idioma:**
+1. Copia `src/locales/en.json` a `src/locales/<codigo>.json` y traduce los valores (no las claves ni las `{variables}`).
+2. Regístralo en `src/i18n.js`, en `main/i18n.js`, en `main/prefs.js` (`LANGUAGES`) y en `src/settings.js` (selector de Ajustes).
+3. Corre `npm test`: comprueba que no falte ninguna clave y que las variables coincidan.
+
+No escribas textos visibles directamente en el código: la prueba `tests/i18n.test.js` falla si usas una clave que no existe.
 
 ## Flujo de trabajo
 

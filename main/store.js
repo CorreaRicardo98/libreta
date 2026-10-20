@@ -15,8 +15,9 @@ const HIST_MAX = 60;
 const SECRET_FIELDS = ['title', 'preview', 'thumb', 'html', 'text', 'tags'];
 
 class Store {
-  constructor(vaultDir) {
+  constructor(vaultDir, { defaultFolderName = 'Notas' } = {}) {
     this.keys = new Map(); // id de nota -> clave derivada (solo mientras está abierta)
+    this.defaultFolderName = defaultFolderName; // nombre de la primera carpeta al crear una bóveda nueva
     this.setVault(vaultDir);
   }
 
@@ -32,7 +33,7 @@ class Store {
     fs.mkdirSync(this.attDir, { recursive: true });
     if (!fs.existsSync(this.foldersFile)) {
       this._writeAtomic(this.foldersFile, JSON.stringify([
-        { id: newId(), name: 'Notas', parentId: null, created: Date.now() },
+        { id: newId(), name: this.defaultFolderName, parentId: null, created: Date.now() },
       ], null, 2));
     }
     this.purgeTrash();

@@ -1,4 +1,5 @@
 import { Node } from '@tiptap/core';
+import { t } from './i18n.js';
 
 /** Enlace a otra nota: se escribe con [[ y siempre muestra el título actual de la nota enlazada. */
 export const NoteLink = Node.create({
@@ -36,8 +37,8 @@ export const NoteLink = Node.create({
       dom.setAttribute('href', '#');
       dom.setAttribute('role', 'link');
       dom.contentEditable = 'false';
-      dom.textContent = live || node.attrs.label || 'Nota';
-      dom.title = live == null ? 'Esta nota ya no existe' : 'Abrir nota (clic)';
+      dom.textContent = live || node.attrs.label || t('share.defaultTitle');
+      dom.title = live == null ? t('link.missing') : t('link.open');
       dom.addEventListener('click', (e) => { e.preventDefault(); e.stopPropagation(); onOpen(node.attrs.id); });
       return { dom };
     };

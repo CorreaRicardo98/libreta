@@ -1,10 +1,13 @@
+import { t, tn, setLang, translateDom, locale } from './i18n.js';
 import { $, esc, showMenu, promptDialog, confirmDialog, passwordDialog, smartDialog, importDialog, historyDialog, toast, shortDate, longDate, groupLabel } from './ui.js';
 import { search, matches } from './search.js';
 import { helpDialog } from './help.js';
 import { initUpdates } from './updates.js';
 import { applyPrefs, settingsDialog } from './settings.js';
 
+setLang(window.libreta.prefs.initial.lang);
 applyPrefs(window.libreta.prefs.initial); // antes del primer dibujo, para que no parpadee
+translateDom();
 import { createEditor, snapshot, countWords, insertFiles } from './editor.js';
 import { drawDialog, scanDialog } from './draw.js';
 import { htmlToMarkdown } from './md.js';
@@ -92,7 +95,7 @@ function visibleNotes() {
   else list = live();
   const key = S.sort === 'created' ? 'created' : 'updated';
   const cmp = S.sort === 'title'
-    ? (a, b) => (a.title || '~').localeCompare(b.title || '~', 'es', { sensitivity: 'base' })
+    ? (a, b) => (a.title || '~').localeCompare(b.title || '~', locale(), { sensitivity: 'base' })
     : (a, b) => b[key] - a[key];
   return list.sort((a, b) => (S.scope.type === 'trash' ? 0 : (b.pinned - a.pinned)) || cmp(a, b));
 }
@@ -108,7 +111,7 @@ function renderSide() {
   const item = (attrs, icon, name, ct, current, depth = 0, twist = '') =>
     `<button type="button" class="nav-item" style="--depth:${depth}" ${attrs} ${current ? 'aria-current="true"' : ''}>${twist}${icon}<span class="nm">${esc(name)}</span><span class="ct">${ct}</span></button>`;
   const sc = S.scope;
-  $('#nav-main').innerHTML = item('data-scope="all"', ICON.all, 'Todas las notas', live().length, sc.type === 'all', 0, '<span class="twist none"></span>');
+  $('#nav-main').innerHTML = item('data-scope="all"', ICON.all, t('side.allNotes'), live().length, sc.type === 'all', 0, '<span class="twist none"></span>');
 
   $('#smart-block').hidden = !S.smart.length;
   $('#nav-smart').innerHTML = S.smart.map((sf) =>
@@ -119,18 +122,18 @@ function renderSide() {
     const open = !S.collapsed.has(f.id);
     const ids = scopeIds(f);
     const twist = kids.length
-      ? `<span class="twist" role="button" tabindex="-1" data-twist="${esc(f.id)}" aria-expanded="${open}" aria-label="${open ? 'Contraer' : 'Expandir'} ${esc(f.name)}">${ICON.chevron}</span>`
+      ? `<span class="twist" role="button" tabindex="-1" data-twist="${esc(f.id)}" aria-expanded="${open}" aria-label="${open ? t('side.collapse') : t('side.expand')} ${esc(f.name)}">${ICON.chevron}</span>`
       : '<span class="twist none"></span>';
     return item(`data-scope="folder" data-id="${esc(f.id)}"`, ICON.folder, f.name, live().filter((n) => ids.includes(n.folderId)).length, sc.type === 'folder' && sc.id === f.id, depth, twist)
       + (kids.length && open ? tree(f.id, depth + 1) : '');
   }).join('');
   $('#nav-folders').innerHTML = tree(null, 0)
-    + item('data-scope="trash"', ICON.trash, 'Papelera', S.notes.filter((n) => n.deletedAt).length || '', sc.type === 'trash', 0, '<span class="twist none"></span>');
+    + item('data-scope="trash"', ICON.trash, t('side.trash'), S.notes.filter((n) => n.deletedAt).length || '', sc.type === 'trash', 0, '<span class="twist none"></span>');
 
   const tags = new Map();
   for (const n of live()) for (const t of n.tags || []) tags.set(t, (tags.get(t) || 0) + 1);
   $('#tags-block').hidden = !tags.size;
-  $('#nav-tags').innerHTML = [...tags].sort((a, b) => a[0].localeCompare(b[0], 'es'))
+  $('#nav-tags').innerHTML = [...tags].sort((a, b) => a[0].localeCompare(b[0], locale()))
     .map(([t, c]) => item(`data-scope="tag" data-id="${esc(t)}"`, ICON.tag, t, c, sc.type === 'tag' && sc.id === t, 0, '<span class="twist none"></span>')).join('');
 }
 
@@ -163,20 +166,20 @@ $('.sidebar').addEventListener('contextmenu', (e) => {
   if (b.dataset.scope === 'smart') {
     const sf = smartById(b.dataset.id);
     showMenu(e.clientX, e.clientY, [
-      { label: 'Editar reglas…', onClick: () => editSmart(sf) },
+      { label: t('smart.editRules'), onClick: () => editSmart(sf) },
       { sep: true },
-      { label: 'Eliminar carpeta inteligente', danger: true, onClick: () => deleteSmart(sf) },
+      { label: t('smart.delete'), danger: true, onClick: () => deleteSmart(sf) },
     ]);
     return;
   }
   const f = S.folders.find((x) => x.id === b.dataset.id);
   showMenu(e.clientX, e.clientY, [
-    { label: 'Nota nueva aquí', onClick: () => newNote(f.id) },
-    { label: 'Subcarpeta nueva…', onClick: () => newFolder(f.id) },
-    { label: 'Renombrar carpeta…', onClick: () => renameFolder(f) },
-    { label: 'Mover carpeta a…', onClick: () => folderMoveMenu(e.clientX, e.clientY, f) },
+    { label: t('folder.menu.newNoteHere'), onClick: () => newNote(f.id) },
+    { label: t('folder.menu.newSub'), onClick: () => newFolder(f.id) },
+    { label: t('folder.menu.rename'), onClick: () => renameFolder(f) },
+    { label: t('folder.menu.move'), onClick: () => folderMoveMenu(e.clientX, e.clientY, f) },
     { sep: true },
-    { label: 'Eliminar carpeta…', danger: true, onClick: () => deleteFolder(f) },
+    { label: t('folder.menu.delete'), danger: true, onClick: () => deleteFolder(f) },
   ]);
 });
 
@@ -184,8 +187,8 @@ function folderMoveMenu(x, y, f) {
   const banned = new Set(folderWithDescendants(f.id));
   const move = async (pid) => { S.folders = await api.folders.move(f.id, pid); renderAll(); };
   showMenu(x, y, [
-    { header: `Mover «${f.name}» a` },
-    { label: 'Nivel principal', checked: !f.parentId, onClick: () => move(null) },
+    { header: t('folder.moveHeader', { name: f.name }) },
+    { label: t('folder.topLevel'), checked: !f.parentId, onClick: () => move(null) },
     ...S.folders.filter((o) => !banned.has(o.id)).map((o) => ({ label: folderPath(o.id), checked: f.parentId === o.id, onClick: () => move(o.id) })),
   ]);
 }
@@ -207,7 +210,7 @@ $('.sidebar').addEventListener('drop', async (e) => {
 });
 
 async function newFolder(parentId = null) {
-  const name = await promptDialog({ title: parentId ? `Subcarpeta de «${folderName(parentId)}»` : 'Carpeta nueva', placeholder: 'Nombre de la carpeta', ok: 'Crear carpeta' });
+  const name = await promptDialog({ title: parentId ? t('folder.subOf', { name: folderName(parentId) }) : t('folder.newTitle'), placeholder: t('folder.namePh'), ok: t('folder.create') });
   if (!name) return;
   const f = await api.folders.create(name, parentId);
   S.folders.push(f);
@@ -222,26 +225,26 @@ async function editSmart(sf) {
   setScope({ type: 'smart', id: sf ? sf.id : S.smart[S.smart.length - 1].id });
 }
 async function deleteSmart(sf) {
-  const ok = await confirmDialog({ title: `¿Eliminar «${sf.name}»?`, text: 'Tus notas no se borran: solo desaparece este filtro guardado.', ok: 'Eliminar' });
+  const ok = await confirmDialog({ title: t('folder.deleteTitle', { name: sf.name }), text: t('smart.deleteText'), ok: t('common.delete') });
   if (!ok) return;
   S.smart = await api.smart.remove(sf.id);
   if (S.scope.type === 'smart' && S.scope.id === sf.id) S.scope = { type: 'all' };
   renderAll();
 }
 async function renameFolder(f) {
-  const name = await promptDialog({ title: 'Renombrar carpeta', value: f.name, ok: 'Guardar' });
+  const name = await promptDialog({ title: t('folder.renameTitle'), value: f.name, ok: t('common.save') });
   if (!name) return;
   S.folders = await api.folders.rename(f.id, name);
   renderAll();
 }
 async function deleteFolder(f) {
   const ids = folderWithDescendants(f.id);
-  if (S.folders.length - ids.length < 1) { toast('Debe quedar al menos una carpeta.'); return; }
+  if (S.folders.length - ids.length < 1) { toast(t('folder.mustKeepOne')); return; }
   const n = live().filter((x) => ids.includes(x.folderId)).length;
   const ok = await confirmDialog({
-    title: `¿Eliminar «${f.name}»?`,
-    text: n ? `Sus ${n} ${n === 1 ? 'nota irá' : 'notas irán'} a la papelera, donde las puedes recuperar durante 30 días.` : 'La carpeta está vacía.',
-    ok: 'Eliminar carpeta',
+    title: t('folder.deleteTitle', { name: f.name }),
+    text: n ? tn('folder.deleteNotes', n) : t('folder.empty'),
+    ok: t('folder.deleteOk'),
   });
   if (!ok) return;
   await flushSave();
@@ -254,29 +257,29 @@ $('#btn-new-folder').addEventListener('click', (e) => {
   const r = e.currentTarget.getBoundingClientRect();
   const cur = S.scope.type === 'folder' ? S.folders.find((f) => f.id === S.scope.id) : null;
   showMenu(r.left, r.top - 200, [
-    { label: 'Carpeta nueva…', onClick: () => newFolder() },
-    ...(cur ? [{ label: `Subcarpeta de «${cur.name}»…`, onClick: () => newFolder(cur.id) }] : []),
-    { label: 'Carpeta inteligente…', onClick: () => editSmart(null) },
+    { label: t('folder.newMenu'), onClick: () => newFolder() },
+    ...(cur ? [{ label: t('folder.subOfMenu', { name: cur.name }), onClick: () => newFolder(cur.id) }] : []),
+    { label: t('folder.smartMenu'), onClick: () => editSmart(null) },
     { sep: true },
-    { label: 'Importar notas…', onClick: importNotes },
+    { label: t('folder.importMenu'), onClick: importNotes },
   ]);
 });
 
 // ---------------------------------------------------------------- lista
 const scopeTitle = () => {
-  if (S.q.trim() && S.scope.type !== 'trash') return 'Resultados';
+  if (S.q.trim() && S.scope.type !== 'trash') return t('list.results');
   const { type, id } = S.scope;
   if (type === 'folder') return folderName(id);
   if (type === 'tag') return `#${id}`;
-  if (type === 'smart') return smartById(id)?.name ?? 'Carpeta inteligente';
-  if (type === 'trash') return 'Papelera';
-  return 'Todas las notas';
+  if (type === 'smart') return smartById(id)?.name ?? t('list.smartDefault');
+  if (type === 'trash') return t('side.trash');
+  return t('side.allNotes');
 };
 
 function renderList() {
   const notes = visibleNotes();
   $('#list-name').textContent = scopeTitle();
-  $('#list-count').textContent = notes.length ? `${notes.length} ${notes.length === 1 ? 'nota' : 'notas'}` : '';
+  $('#list-count').textContent = notes.length ? tn('list.count', notes.length) : '';
   $('#v-list').setAttribute('aria-pressed', String(S.view === 'list'));
   $('#v-gallery').setAttribute('aria-pressed', String(S.view === 'gallery'));
   $('#btn-new').hidden = S.scope.type === 'trash';
@@ -285,18 +288,18 @@ function renderList() {
 
   let html = '';
   if (S.scope.type === 'trash' && notes.length) {
-    html += '<div class="trash-tools"><span>Se borran solas a los 30 días.</span><button type="button" id="btn-empty-trash">Vaciar papelera</button></div>';
+    html += `<div class="trash-tools"><span>${esc(t('list.trashHint'))}</span><button type="button" id="btn-empty-trash">${esc(t('list.emptyTrash'))}</button></div>`;
   }
   if (S.q.trim() && notes.length) {
-    html += '<div class="trash-tools"><span>Más relevantes primero.</span><button type="button" class="btn-soft" id="btn-save-search">Guardar búsqueda</button></div>';
+    html += `<div class="trash-tools"><span>${esc(t('list.byRelevance'))}</span><button type="button" class="btn-soft" id="btn-save-search">${esc(t('list.saveSearch'))}</button></div>`;
   }
   if (!notes.length) {
-    const msg = S.q.trim() ? ['Sin resultados', `Ninguna nota contiene «${S.q.trim()}».`]
-      : S.scope.type === 'trash' ? ['La papelera está vacía', 'Las notas que elimines aparecerán aquí.']
-      : S.scope.type === 'smart' ? ['Ninguna nota cumple las reglas', 'Cambia las reglas con clic derecho sobre la carpeta inteligente.']
-      : S.scope.type === 'tag' ? ['Nada con esta etiqueta', 'Escribe #' + S.scope.id + ' dentro de una nota para etiquetarla.']
-      : ['Aquí no hay notas todavía', 'Crea la primera con «Nota nueva».'];
-    const help = S.q.trim() ? '<span class="search-help">Prueba con <code>tag:ideas</code> <code>tiene:imagen</code> <code>carpeta:trabajo</code> <code>"frase exacta"</code> <code>-palabra</code></span>' : '';
+    const msg = S.q.trim() ? [t('empty.noResults.t'), t('empty.noResults.d', { q: S.q.trim() })]
+      : S.scope.type === 'trash' ? [t('empty.trash.t'), t('empty.trash.d')]
+      : S.scope.type === 'smart' ? [t('empty.smart.t'), t('empty.smart.d')]
+      : S.scope.type === 'tag' ? [t('empty.tag.t'), t('empty.tag.d', { tag: S.scope.id })]
+      : [t('empty.none.t'), t('empty.none.d')];
+    const help = S.q.trim() ? `<span class="search-help">${esc(t('search.helpLead'))} ${[1, 2, 3, 4, 5].map((i) => `<code>${esc(t(`search.ex${i}`))}</code>`).join(' ')}</span>` : '';
     el.innerHTML = `${html}<div class="empty-list"><strong>${esc(msg[0])}</strong>${esc(msg[1])}${help}</div>`;
     return;
   }
@@ -304,10 +307,10 @@ function renderList() {
   const showFolder = S.scope.type !== 'folder';
   const groups = [];
   for (const n of notes) {
-    const g = S.q.trim() ? 'Coincidencias'
-      : S.scope.type === 'trash' ? 'Eliminadas'
-      : n.pinned ? 'Fijadas'
-      : S.sort === 'title' ? 'Notas'
+    const g = S.q.trim() ? t('group.matches')
+      : S.scope.type === 'trash' ? t('group.deleted')
+      : n.pinned ? t('group.pinned')
+      : S.sort === 'title' ? t('group.notes')
       : groupLabel(S.sort === 'created' ? n.created : n.updated);
     const last = groups[groups.length - 1];
     if (last?.name === g) last.items.push(n); else groups.push({ name: g, items: [n] });
@@ -319,16 +322,16 @@ function renderList() {
       html += '<div class="cards">' + g.items.map((n) => `
         <button type="button" class="card" draggable="true" data-id="${n.id}" ${n.id === S.currentId ? 'aria-current="true"' : ''}>
           <div class="card-body ${n.thumb ? 'has-img' : ''}">
-            ${n.locked ? `<div class="card-t">${ICON.lock}Nota bloqueada</div><div class="card-p">Contenido protegido con contraseña.</div>`
-              : n.thumb ? `<img src="${esc(n.thumb)}" alt="" loading="lazy">` : `<div class="card-t">${esc(n.title || 'Nota nueva')}</div><div class="card-p">${esc(n.preview)}</div>`}
+            ${n.locked ? `<div class="card-t">${ICON.lock}${esc(t('note.locked'))}</div><div class="card-p">${esc(t('note.lockedDesc'))}</div>`
+              : n.thumb ? `<img src="${esc(n.thumb)}" alt="" loading="lazy">` : `<div class="card-t">${esc(n.title || t('note.newDefault'))}</div><div class="card-p">${esc(n.preview)}</div>`}
           </div>
-          <div class="card-foot">${n.thumb && !n.locked ? `<b>${esc(n.title || 'Nota nueva')}</b>` : ''}${n.pinned ? ICON.pin : ''}${esc(shortDate(when(n)))}</div>
+          <div class="card-foot">${n.thumb && !n.locked ? `<b>${esc(n.title || t('note.newDefault'))}</b>` : ''}${n.pinned ? ICON.pin : ''}${esc(shortDate(when(n)))}</div>
         </button>`).join('') + '</div>';
     } else {
       html += g.items.map((n) => `
         <button type="button" class="note" draggable="true" data-id="${n.id}" ${n.id === S.currentId ? 'aria-current="true"' : ''}>
-          <div class="note-t">${n.pinned ? ICON.pin : ''}${n.locked ? ICON.lock : ''}${esc(n.locked ? 'Nota bloqueada' : n.title || 'Nota nueva')}</div>
-          <div class="note-m"><span class="d">${esc(shortDate(when(n)))}</span><span class="p">${esc(n.locked ? 'Contenido protegido' : S.snips.get(n.id) || n.preview || 'Sin texto adicional')}</span></div>
+          <div class="note-t">${n.pinned ? ICON.pin : ''}${n.locked ? ICON.lock : ''}${esc(n.locked ? t('note.locked') : n.title || t('note.newDefault'))}</div>
+          <div class="note-m"><span class="d">${esc(shortDate(when(n)))}</span><span class="p">${esc(n.locked ? t('note.protected') : S.snips.get(n.id) || n.preview || t('note.noExtra'))}</span></div>
           ${showFolder ? `<div class="note-f">${esc(folderName(n.folderId))}</div>` : ''}
         </button>`).join('');
     }
@@ -374,18 +377,18 @@ function noteMenu(x, y, id) {
   if (!n) return;
   if (n.deletedAt) {
     showMenu(x, y, [
-      { label: 'Recuperar nota', onClick: () => restoreNote(id) },
-      { label: 'Eliminar definitivamente…', danger: true, onClick: () => purgeNote(id) },
+      { label: t('note.menu.restore'), onClick: () => restoreNote(id) },
+      { label: t('note.menu.purge'), danger: true, onClick: () => purgeNote(id) },
     ]);
     return;
   }
   showMenu(x, y, [
-    { label: n.pinned ? 'Quitar de fijadas' : 'Fijar nota', onClick: () => togglePin(id) },
+    { label: n.pinned ? t('note.menu.unpin') : t('note.menu.pin'), onClick: () => togglePin(id) },
     { sep: true },
-    { header: 'Mover a' },
+    { header: t('note.menu.moveTo') },
     ...S.folders.map((f) => ({ label: folderPath(f.id), checked: f.id === n.folderId, onClick: () => moveNote(id, f.id) })),
     { sep: true },
-    { label: 'Mover a la papelera', danger: true, onClick: () => trashNote(id) },
+    { label: t('note.menu.trash'), danger: true, onClick: () => trashNote(id) },
   ]);
 }
 
@@ -393,10 +396,10 @@ $('#btn-sort').addEventListener('click', (e) => {
   const r = e.currentTarget.getBoundingClientRect();
   const set = (v) => () => { S.sort = v; store.set('sort', v); renderList(); };
   showMenu(r.left, r.bottom + 4, [
-    { header: 'Ordenar por' },
-    { label: 'Fecha de edición', checked: S.sort === 'updated', onClick: set('updated') },
-    { label: 'Fecha de creación', checked: S.sort === 'created', onClick: set('created') },
-    { label: 'Título', checked: S.sort === 'title', onClick: set('title') },
+    { header: t('sort.header') },
+    { label: t('sort.updated'), checked: S.sort === 'updated', onClick: set('updated') },
+    { label: t('sort.created'), checked: S.sort === 'created', onClick: set('created') },
+    { label: t('sort.title'), checked: S.sort === 'title', onClick: set('title') },
   ]);
 });
 const setView = (v) => { S.view = v; store.set('view', v); renderList(); };
@@ -412,11 +415,11 @@ $('#search').addEventListener('input', (e) => {
 
 async function saveSearch() {
   const q = S.q.trim();
-  const name = await promptDialog({ title: 'Guardar búsqueda', value: q.length > 40 ? q.slice(0, 40) : q, placeholder: 'Nombre de la carpeta inteligente', ok: 'Guardar' });
+  const name = await promptDialog({ title: t('search.saveTitle'), value: q.length > 40 ? q.slice(0, 40) : q, placeholder: t('search.saveName'), ok: t('common.save') });
   if (!name) return;
   S.smart = await api.smart.save({ name, rules: { query: q } });
   setScope({ type: 'smart', id: S.smart[S.smart.length - 1].id });
-  toast('Búsqueda guardada como carpeta inteligente');
+  toast(t('toast.searchSaved'));
 }
 $('#search').addEventListener('keydown', (e) => { if (e.key === 'Escape') { e.target.value = ''; S.q = ''; renderList(); } });
 
@@ -448,7 +451,7 @@ async function moveNote(id, folderId) {
   await flushSave();
   Object.assign(n, await api.notes.setMeta(id, { folderId }));
   renderAll();
-  toast(`Movida a «${folderName(folderId)}»`);
+  toast(t('toast.moved', { name: folderName(folderId) }));
 }
 
 async function trashNote(id) {
@@ -458,7 +461,7 @@ async function trashNote(id) {
   if (n) n.deletedAt = Date.now();
   const list = visibleNotes();
   renderAll();
-  toast('Movida a la papelera');
+  toast(t('toast.trashed'));
   if (id === S.currentId) { if (list[0]) await openNote(list[0].id); else closeNote(); }
 }
 
@@ -466,11 +469,11 @@ async function restoreNote(id) {
   await api.notes.restore(id);
   await reload();
   if (id === S.currentId) await openNote(id);
-  toast('Nota recuperada');
+  toast(t('toast.restored'));
 }
 
 async function purgeNote(id) {
-  const ok = await confirmDialog({ title: '¿Eliminar para siempre?', text: 'Esta nota no se podrá recuperar.', ok: 'Eliminar nota' });
+  const ok = await confirmDialog({ title: t('purge.title'), text: t('purge.text'), ok: t('purge.ok') });
   if (!ok) return;
   await api.notes.purge(id);
   S.notes = S.notes.filter((n) => n.id !== id);
@@ -479,7 +482,7 @@ async function purgeNote(id) {
 }
 
 async function emptyTrash() {
-  const ok = await confirmDialog({ title: '¿Vaciar la papelera?', text: 'Todas las notas eliminadas se borrarán para siempre.', ok: 'Vaciar papelera' });
+  const ok = await confirmDialog({ title: t('trash.emptyTitle'), text: t('trash.emptyText'), ok: t('list.emptyTrash') });
   if (!ok) return;
   await api.notes.emptyTrash();
   S.notes = live();
@@ -494,7 +497,7 @@ async function openNote(id, { focus = false, keepFocus = false } = {}) {
     if (S.currentId && noteById(S.currentId)?.locked) api.notes.relock(S.currentId);
   }
   const n = await api.notes.get(id);
-  if (!n) { await reload(); toast('Esa nota ya no existe.'); return; }
+  if (!n) { await reload(); toast(t('toast.noteGone')); return; }
   S.currentId = id;
   S.curUpdated = n.updated;
   S.dirty = false;
@@ -541,7 +544,7 @@ $('#lock-form').addEventListener('submit', async (e) => {
   e.preventDefault();
   const id = S.currentId;
   const n = await api.notes.unlock(id, $('#lock-pass').value);
-  if (!n) { $('#lock-error').textContent = 'Contraseña incorrecta.'; $('#lock-pass').select(); return; }
+  if (!n) { $('#lock-error').textContent = t('lock.wrong'); $('#lock-pass').select(); return; }
   S.curUpdated = n.updated;
   showNote(n, {});
   editor.commands.focus('end');
@@ -550,31 +553,31 @@ $('#lock-form').addEventListener('submit', async (e) => {
 async function lockCurrent() {
   const id = S.currentId;
   const pwd = await passwordDialog({
-    title: 'Bloquear nota', confirm: true, ok: 'Bloquear',
-    text: 'Si olvidas la contraseña, nadie podrá recuperar la nota. Las imágenes y archivos adjuntos no se cifran.',
+    title: t('lock.title'), confirm: true, ok: t('lock.ok'),
+    text: t('lock.warn'),
   });
   if (!pwd) { editor.commands.focus(); return; }
   await flushSave();
   const meta = await api.notes.lock(id, pwd);
-  if (!meta) { toast('No se pudo bloquear la nota.'); return; }
+  if (!meta) { toast(t('toast.lockFailed')); return; }
   Object.assign(noteById(id), meta);
   renderAll();
   await openNote(id);
-  toast('Nota bloqueada');
+  toast(t('toast.locked'));
 }
 
 async function removeLockCurrent() {
   const id = S.currentId;
-  const pwd = await passwordDialog({ title: 'Quitar el bloqueo', text: 'La nota volverá a guardarse sin cifrar.', ok: 'Quitar bloqueo' });
+  const pwd = await passwordDialog({ title: t('lock.removeTitle'), text: t('lock.removeText'), ok: t('lock.removeOk') });
   if (!pwd) return;
   await flushSave();
   const meta = await api.notes.removeLock(id, pwd);
-  if (!meta) { toast('Contraseña incorrecta.'); return; }
+  if (!meta) { toast(t('lock.wrong')); return; }
   Object.assign(noteById(id), meta, { locked: false });
   S.notes = await api.notes.list();
   renderAll();
   syncToolbar();
-  toast('Bloqueo quitado');
+  toast(t('toast.lockRemoved'));
 }
 
 $('#tb-lock').addEventListener('click', (e) => {
@@ -582,10 +585,10 @@ $('#tb-lock').addEventListener('click', (e) => {
   if (!n) return;
   const r = e.currentTarget.getBoundingClientRect();
   showMenu(r.right - 190, r.bottom + 4, n.locked ? [
-    { label: 'Bloquear ahora', onClick: async () => { await flushSave(); api.notes.relock(n.id); await openNote(n.id); } },
-    { label: 'Quitar bloqueo…', onClick: removeLockCurrent },
+    { label: t('lock.menu.now'), onClick: async () => { await flushSave(); api.notes.relock(n.id); await openNote(n.id); } },
+    { label: t('lock.menu.remove'), onClick: removeLockCurrent },
   ] : [
-    { label: 'Bloquear con contraseña…', onClick: lockCurrent },
+    { label: t('lock.menu.set'), onClick: lockCurrent },
   ]);
 });
 
@@ -599,13 +602,13 @@ function closeNote() {
 
 function updateStatus(saveText) {
   const words = countWords(editor.getText());
-  $('#statusbar').innerHTML = `<span>${words} ${words === 1 ? 'palabra' : 'palabras'}</span><span>${esc(saveText)}</span>`;
+  $('#statusbar').innerHTML = `<span>${tn('status.words', words)}</span><span>${esc(saveText)}</span>`;
 }
 
 function onEditorUpdate() {
   if (S.loading || !S.currentId) return;
   S.dirty = true;
-  updateStatus('Sin guardar…');
+  updateStatus(t('status.unsaved'));
   clearTimeout(saveTimer);
   saveTimer = setTimeout(flushSave, 600);
 }
@@ -623,7 +626,7 @@ async function flushSave() {
   if (id === S.currentId) {
     S.curUpdated = meta.updated;
     $('#doc-date').textContent = longDate(meta.updated);
-    updateStatus('Guardado');
+    updateStatus(t('status.saved'));
   }
   renderSide();
   renderList();
@@ -669,14 +672,14 @@ function syncToolbar() {
   $('#tb-style').value = style;
   const n = noteById(S.currentId);
   $('#tb-lock').setAttribute('aria-pressed', String(!!n?.locked));
-  $('#tb-lock').title = n?.locked ? 'Opciones de bloqueo' : 'Bloquear nota';
+  $('#tb-lock').title = n?.locked ? t('tb.lockOptions') : t('tb.lock');
   $('#tb-pin').setAttribute('aria-pressed', String(!!n?.pinned));
-  $('#tb-pin').title = n?.pinned ? 'Quitar de fijadas' : 'Fijar nota';
+  $('#tb-pin').title = n?.pinned ? t('note.menu.unpin') : t('note.menu.pin');
 }
 
 async function editLink() {
   const prev = editor.getAttributes('link').href || '';
-  const url = await promptDialog({ title: 'Enlace', value: prev, placeholder: 'https://…', ok: 'Aplicar' });
+  const url = await promptDialog({ title: t('link.title'), value: prev, placeholder: 'https://…', ok: t('link.apply') });
   if (url === null) { editor.commands.focus(); return; }
   if (!url) editor.chain().focus().extendMarkRange('link').unsetLink().run();
   else editor.chain().focus().extendMarkRange('link').setLink({ href: url }).run();
@@ -707,23 +710,22 @@ $('#tb-menu').addEventListener('click', (e) => {
   if (!n) return;
   const r = e.currentTarget.getBoundingClientRect();
   showMenu(r.right - 210, r.bottom + 4, [
-    { header: 'Mover a' },
+    { header: t('note.menu.moveTo') },
     ...S.folders.map((f) => ({ label: folderPath(f.id), checked: f.id === n.folderId, onClick: () => moveNote(id, f.id) })),
     { sep: true },
+    { label: t('menu.history'), onClick: openHistory },
     { sep: true },
-    { label: 'Historial de versiones…', onClick: openHistory },
+    { header: t('share.header') },
+    { label: t('share.text'), onClick: () => shareNote('text') },
+    { label: t('share.md'), onClick: () => shareNote('md-copy') },
+    { label: t('share.mail'), onClick: () => shareNote('mail') },
     { sep: true },
-    { header: 'Compartir' },
-    { label: 'Copiar como texto', onClick: () => shareNote('text') },
-    { label: 'Copiar como Markdown', onClick: () => shareNote('md-copy') },
-    { label: 'Enviar por correo…', onClick: () => shareNote('mail') },
+    { header: t('export.header') },
+    { label: t('export.pdf'), onClick: () => exportNote('pdf') },
+    { label: t('export.html'), onClick: () => exportNote('html') },
+    { label: t('export.md'), onClick: () => exportNote('md') },
     { sep: true },
-    { header: 'Exportar' },
-    { label: 'Como PDF…', onClick: () => exportNote('pdf') },
-    { label: 'Como HTML…', onClick: () => exportNote('html') },
-    { label: 'Como Markdown…', onClick: () => exportNote('md') },
-    { sep: true },
-    { label: 'Mover a la papelera', danger: true, onClick: () => trashNote(id) },
+    { label: t('note.menu.trash'), danger: true, onClick: () => trashNote(id) },
   ]);
 });
 $('#btn-restore').addEventListener('click', () => S.currentId && restoreNote(S.currentId));
@@ -733,22 +735,22 @@ async function exportNote(kind) {
   await flushSave();
   const n = noteById(S.currentId);
   const html = editor.getHTML();
-  const ok = await api.exportNote(kind, n?.title, kind === 'md' ? htmlToMarkdown(html) : html);
-  if (ok) toast({ pdf: 'PDF guardado', html: 'HTML guardado', md: 'Markdown guardado' }[kind]);
+  const ok = await api.exportNote(kind, n?.title || t('note.untitled'), kind === 'md' ? htmlToMarkdown(html) : html);
+  if (ok) toast(t(`toast.exported.${kind}`));
 }
 
 async function shareNote(how) {
-  const title = editor.getText().split('\n').find((l) => l.trim())?.trim() || 'Nota';
+  const title = editor.getText().split('\n').find((l) => l.trim())?.trim() || t('share.defaultTitle');
   try {
-    if (how === 'text') { await navigator.clipboard.writeText(editor.getText({ blockSeparator: '\n\n' })); toast('Texto copiado'); }
-    else if (how === 'md-copy') { await navigator.clipboard.writeText(htmlToMarkdown(editor.getHTML())); toast('Markdown copiado'); }
+    if (how === 'text') { await navigator.clipboard.writeText(editor.getText({ blockSeparator: '\n\n' })); toast(t('toast.copiedText')); }
+    else if (how === 'md-copy') { await navigator.clipboard.writeText(htmlToMarkdown(editor.getHTML())); toast(t('toast.copiedMd')); }
     else if (how === 'mail') {
       const body = editor.getText({ blockSeparator: '\n\n' });
       const cut = body.length > 1500;
       window.open(`mailto:?subject=${encodeURIComponent(title)}&body=${encodeURIComponent(cut ? body.slice(0, 1500) + '…' : body)}`);
-      if (cut) toast('El correo lleva solo el inicio. Usa «Copiar como texto» para pegar la nota completa.');
+      if (cut) toast(t('toast.mailCut'));
     }
-  } catch { toast('No se pudo copiar al portapapeles.'); }
+  } catch { toast(t('toast.copyFailed')); }
 }
 
 // ---------------------------------------------------------------- navegación, menú y eventos del sistema
@@ -790,14 +792,14 @@ document.addEventListener('visibilitychange', () => { if (document.hidden) flush
 function linkTitle(id) {
   const n = noteById(id);
   if (!n || n.deletedAt) return null;
-  return n.locked ? 'Nota bloqueada' : n.title || 'Nota sin título';
+  return n.locked ? t('note.locked') : n.title || t('note.untitled');
 }
 
 function suggestNotes(q) {
   const pool = live().filter((n) => !n.locked && n.id !== S.currentId);
   const t = q.trim();
   const found = t ? search(pool, t, searchCtx).map((h) => h.note) : pool.sort((a, b) => b.updated - a.updated);
-  return found.slice(0, 6).map((n) => ({ id: n.id, title: n.title || 'Nota sin título' }));
+  return found.slice(0, 6).map((n) => ({ id: n.id, title: n.title || t('note.untitled') }));
 }
 
 async function createLinkedNote(title) {
@@ -812,8 +814,8 @@ async function createLinkedNote(title) {
 
 async function openLinked(id) {
   const n = noteById(id);
-  if (!n) { toast('Esa nota ya no existe.'); return; }
-  if (n.deletedAt) toast('Esa nota está en la papelera.');
+  if (!n) { toast(t('toast.noteGone')); return; }
+  if (n.deletedAt) toast(t('toast.noteInTrash'));
   await openNote(id);
 }
 
@@ -823,7 +825,7 @@ function renderBacklinks() {
   const refs = here && !here.locked ? live().filter((n) => n.id !== here.id && !n.locked && n.links?.includes(here.id)) : [];
   el.hidden = !refs.length;
   if (!refs.length) return;
-  el.innerHTML = `<span>Mencionada en</span>${refs.map((n) => `<button type="button" data-open="${esc(n.id)}" title="${esc(n.title || 'Nota sin título')}">${esc(n.title || 'Nota sin título')}</button>`).join('')}`;
+  el.innerHTML = `<span>${esc(t('backlinks.label'))}</span>${refs.map((n) => `<button type="button" data-open="${esc(n.id)}" title="${esc(n.title || t('note.untitled'))}">${esc(n.title || t('note.untitled'))}</button>`).join('')}`;
 }
 $('#backlinks').addEventListener('click', (e) => {
   const b = e.target.closest('[data-open]');
@@ -836,25 +838,25 @@ async function openHistory() {
   if (!id) return;
   await flushSave();
   const versions = await api.history.list(id);
-  if (!versions.length) { toast('Aún no hay versiones anteriores. Se guarda una cada 5 minutos de edición.'); return; }
+  if (!versions.length) { toast(t('history.none')); return; }
   const t = await historyDialog({
     versions, fmt: longDate,
     load: (when) => api.history.get(id, when),
   });
   if (!t) { editor.commands.focus(); return; }
   const n = await api.history.restore(id, t);
-  if (!n) { toast('No se pudo restaurar esa versión.'); return; }
+  if (!n) { toast(t('history.restoreFailed')); return; }
   S.notes = await api.notes.list();
   S.curUpdated = n.updated;
   showNote(n, {});
   renderAll();
-  toast('Versión restaurada. La anterior quedó en el historial.');
+  toast(t('history.restored'));
 }
 
 // ---------------------------------------------------------------- ajustes
 async function changeVault() {
   await flushSave();
-  if (await api.vault.change()) { S.currentId = null; closeNote(); await reload(); toast('Carpeta de notas cambiada'); }
+  if (await api.vault.change()) { S.currentId = null; closeNote(); await reload(); toast(t('toast.vaultChanged')); }
 }
 
 async function openSettings() {
@@ -864,6 +866,7 @@ async function openSettings() {
     onView: setView,
     onSort: (v) => { S.sort = v; store.set('sort', v); renderList(); },
     onChangeVault: changeVault,
+    onLanguage: async () => { await flushSave(); location.reload(); },
   });
 }
 $('#btn-settings').addEventListener('click', openSettings);
@@ -899,7 +902,7 @@ async function importNotes() {
   await flushSave();
   const r = await api.importNotes(kind);
   if (!r) return;
-  if (!r.items.length) { toast('No se encontraron notas para importar.'); return; }
+  if (!r.items.length) { toast(t('toast.importNone')); return; }
   const tmp = createEditor({ element: document.createElement('div'), links: { getTitle: () => null, onOpen() {}, suggest: () => [], create: async () => '' } });
   const key = (t) => String(t).normalize('NFD').replace(/\p{M}/gu, '').toLowerCase().trim();
   const ids = r.items.map(() => crypto.randomUUID());
@@ -926,34 +929,28 @@ async function importNotes() {
       if (!folderIds.has(fk)) folderIds.set(fk, await api.folders.ensurePath(it.folder));
       await api.notes.createFull({ id: ids[i], ...snap, folderId: folderIds.get(fk), created: it.created, updated: it.updated });
       done++;
-      if (done % 15 === 0) toast(`Importando… ${done} de ${r.items.length}`);
+      if (done % 15 === 0) toast(t('toast.importing', { done, total: r.items.length }));
     }
   } finally { tmp.destroy(); }
   await reload();
   S.scope = { type: 'all' };
   renderAll();
-  const skipped = r.skipped?.length ? ` No se pudieron leer ${r.skipped.length}.` : '';
-  toast(`Se importaron ${done} ${done === 1 ? 'nota' : 'notas'}.${skipped}`);
+  const skipped = r.skipped?.length ? t('toast.importSkipped', { n: r.skipped.length }) : '';
+  toast(tn('toast.imported', done, { skipped }));
 }
 
 // ---------------------------------------------------------------- arranque
 function renderAll() { renderSide(); renderList(); renderBacklinks(); }
 
 const task = (done, text) => `<li data-type="taskItem" data-checked="${done}"><label><input type="checkbox" ${done ? 'checked' : ''}><span></span></label><div><p>${text}</p></div></li>`;
-const WELCOME = `<h1>Bienvenida a Libreta</h1>
-<p>Tus notas son archivos en una carpeta tuya: tú decides dónde está y con qué la sincronizas. Aquí tienes lo que puedes hacer y dónde encontrarlo.</p>
-<h2>Pruébalo ahora</h2>
-<ul data-type="taskList">${task(true, 'Crea una nota con <code>Ctrl</code> + <code>N</code>')}${task(false, 'Marca esta tarea tocando el círculo')}${task(false, 'Escribe <code>[[</code> y enlaza otra nota')}${task(false, 'Arrastra una nota de la lista hasta una carpeta')}${task(false, 'Pulsa «Nueva…» (abajo a la izquierda) y crea una subcarpeta o una carpeta inteligente')}</ul>
-<h2>Dónde está cada cosa</h2>
-<ul>
-<li><p><strong>Barra del editor</strong>: formato, listas de tareas, tabla, enlace, imagen, archivo adjunto, dibujo, escáner, candado y chincheta.</p></li>
-<li><p><strong>Menú «…»</strong> (arriba a la derecha): historial de versiones, compartir, exportar y mover.</p></li>
-<li><p><strong>Buscador</strong>: ignora acentos y perdona errores. Prueba <code>tiene:imagen</code> o <code>tag:ideas</code>.</p></li>
-<li><p><strong>Archivo → Importar notas</strong>: trae tus notas de Joplin, Obsidian, Evernote y más.</p></li>
-<li><p><strong>Ajustes</strong> (<code>Ctrl</code> + <code>,</code>): tema claro u oscuro, color, tipografía y tamaño del texto.</p></li>
-<li><p><strong>Ayuda → Guía rápida</strong> (o la tecla <code>F1</code>): todo esto con más detalle.</p></li>
-</ul>
-<p>Escribe etiquetas como #ideas o #pendientes y aparecerán a la izquierda para filtrar.</p>`;
+// La nota de bienvenida se escribe en el idioma de la interfaz (los textos son de la app, no de la persona)
+const welcomeHtml = () => `<h1>${t('welcome.title')}</h1>
+<p>${t('welcome.intro')}</p>
+<h2>${t('welcome.tryTitle')}</h2>
+<ul data-type="taskList">${[1, 2, 3, 4, 5].map((i) => task(i === 1, t(`welcome.task${i}`))).join('')}</ul>
+<h2>${t('welcome.whereTitle')}</h2>
+<ul>${[1, 2, 3, 4, 5, 6].map((i) => `<li><p>${t(`welcome.where${i}`)}</p></li>`).join('\n')}</ul>
+<p>${t('welcome.tags')}</p>`;
 
 async function start() {
   initUpdates({ flush: flushSave, toast });
@@ -968,7 +965,7 @@ async function start() {
     const n = await api.notes.create();
     const { html: _h, ...meta } = n;
     const tmp = createEditor({ element: document.createElement('div') });
-    tmp.commands.setContent(WELCOME);
+    tmp.commands.setContent(welcomeHtml());
     const snap = snapshot(tmp);
     tmp.destroy();
     Object.assign(meta, await api.notes.save({ id: n.id, ...snap }), { text: snap.text });

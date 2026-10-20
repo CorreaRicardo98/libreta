@@ -4,15 +4,17 @@ const THEMES = ['system', 'light', 'dark'];
 const ACCENTS = ['azul', 'verde', 'violeta', 'coral', 'ambar', 'grafito'];
 const FONTS = ['serif', 'sans', 'mono'];
 const WIDTHS = ['narrow', 'normal', 'wide'];
+const LANGUAGES = ['system', 'es', 'en'];
 const SIZES = [15, 17, 19, 21];
 
-const DEFAULTS = { theme: 'system', accent: 'azul', font: 'serif', size: 17, width: 'normal' };
+const DEFAULTS = { theme: 'system', accent: 'azul', font: 'serif', size: 17, width: 'normal', language: 'system' };
 
 const RULES = {
   theme: (v) => THEMES.includes(v),
   accent: (v) => ACCENTS.includes(v),
   font: (v) => FONTS.includes(v),
   width: (v) => WIDTHS.includes(v),
+  language: (v) => LANGUAGES.includes(v),
   size: (v) => SIZES.includes(v),
 };
 
@@ -28,4 +30,4 @@ function sanitize(patch) {
 
 const withDefaults = (stored) => ({ ...DEFAULTS, ...sanitize(stored) });
 
-module.exports = { DEFAULTS, THEMES, ACCENTS, FONTS, WIDTHS, SIZES, sanitize, withDefaults };
+module.exports = { DEFAULTS, THEMES, ACCENTS, FONTS, WIDTHS, LANGUAGES, SIZES, sanitize, withDefaults };
