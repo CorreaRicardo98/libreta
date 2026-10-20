@@ -66,6 +66,7 @@ Para esto Libreta consulta, cada pocas horas, la lista de versiones de GitHub. N
 - **Compartir y exportar**: copiar como texto o Markdown, enviar por correo, exportar a PDF, HTML o Markdown.
 - **Ajustes** (`Ctrl+,`): tema automático, claro u oscuro, seis colores de acento, letra y tamaño del texto de las notas, ancho de la página, vista y orden de la lista, carpeta de notas y actualizaciones.
 - **Guía dentro de la app**: **Ayuda → Guía rápida** (`F1`) o el botón «Guía rápida» de la barra lateral explican dónde está cada función, los filtros de búsqueda y los atajos.
+- **Español e inglés**: Libreta usa el idioma de tu sistema y puedes cambiarlo en Ajustes → Idioma.
 - Uso completo con teclado y en ventanas angostas.
 
 <table>

@@ -1,4 +1,6 @@
 // Piezas de interfaz sueltas: menús contextuales, diálogos y avisos.
+// Aquí «t» suele ser un parámetro (marca de tiempo), por eso la traducción se importa como «tr».
+import { t as tr, locale } from './i18n.js';
 
 export const $ = (sel, root = document) => root.querySelector(sel);
 
@@ -81,10 +83,12 @@ export function dialog(build) {
   });
 }
 
-export function promptDialog({ title, value = '', placeholder = '', ok = 'Aceptar' }) {
+const cancelBtn = () => `<button type="button" data-no>${esc(tr('ui.cancel'))}</button>`;
+
+export function promptDialog({ title, value = '', placeholder = '', ok = tr('ui.accept') }) {
   return dialog((box, done) => {
     box.innerHTML = `<h2>${esc(title)}</h2><input type="text" placeholder="${esc(placeholder)}" value="${esc(value)}" aria-label="${esc(title)}">
-      <div class="row"><button type="button" data-no>Cancelar</button><button type="submit" class="btn-primary">${esc(ok)}</button></div>`;
+      <div class="row">${cancelBtn()}<button type="submit" class="btn-primary">${esc(ok)}</button></div>`;
     const input = box.querySelector('input');
     box.addEventListener('submit', (e) => { e.preventDefault(); done(input.value.trim()); });
     box.querySelector('[data-no]').addEventListener('click', () => done(null));
@@ -92,10 +96,10 @@ export function promptDialog({ title, value = '', placeholder = '', ok = 'Acepta
   });
 }
 
-export function confirmDialog({ title, text = '', ok = 'Aceptar' }) {
+export function confirmDialog({ title, text = '', ok = tr('ui.accept') }) {
   return dialog((box, done) => {
     box.innerHTML = `<h2>${esc(title)}</h2><p class="muted" style="margin:0">${esc(text)}</p>
-      <div class="row"><button type="button" data-no>Cancelar</button><button type="submit" class="btn-primary">${esc(ok)}</button></div>`;
+      <div class="row">${cancelBtn()}<button type="submit" class="btn-primary">${esc(ok)}</button></div>`;
     box.addEventListener('submit', (e) => { e.preventDefault(); done(true); });
     box.querySelector('[data-no]').addEventListener('click', () => done(false));
     setTimeout(() => box.querySelector('.btn-primary').focus());
@@ -103,19 +107,19 @@ export function confirmDialog({ title, text = '', ok = 'Aceptar' }) {
 }
 
 /** Pide contraseña. Con confirm:true pide escribirla dos veces. Resuelve con el texto o null. */
-export function passwordDialog({ title, text = '', confirm = false, ok = 'Aceptar', error = '' }) {
+export function passwordDialog({ title, text = '', confirm = false, ok = tr('ui.accept'), error = '' }) {
   return dialog((box, done) => {
     box.innerHTML = `<h2>${esc(title)}</h2>${text ? `<p class="muted" style="margin:0 0 12px">${esc(text)}</p>` : ''}
-      <input type="password" name="p1" placeholder="Contraseña" aria-label="Contraseña" autocomplete="off">
-      ${confirm ? '<input type="password" name="p2" placeholder="Repite la contraseña" aria-label="Repite la contraseña" autocomplete="off" style="margin-top:8px">' : ''}
+      <input type="password" name="p1" placeholder="${esc(tr('pw.ph'))}" aria-label="${esc(tr('pw.ph'))}" autocomplete="off">
+      ${confirm ? `<input type="password" name="p2" placeholder="${esc(tr('pw.repeat'))}" aria-label="${esc(tr('pw.repeat'))}" autocomplete="off" style="margin-top:8px">` : ''}
       <p class="form-error" role="alert">${esc(error)}</p>
-      <div class="row"><button type="button" data-no>Cancelar</button><button type="submit" class="btn-primary">${esc(ok)}</button></div>`;
+      <div class="row">${cancelBtn()}<button type="submit" class="btn-primary">${esc(ok)}</button></div>`;
     const [a, b] = box.querySelectorAll('input');
     const err = box.querySelector('.form-error');
     box.addEventListener('submit', (e) => {
       e.preventDefault();
-      if (!a.value) { err.textContent = 'Escribe una contraseña.'; return; }
-      if (confirm && a.value !== b.value) { err.textContent = 'Las contraseñas no coinciden.'; return; }
+      if (!a.value) { err.textContent = tr('pw.empty'); return; }
+      if (confirm && a.value !== b.value) { err.textContent = tr('pw.mismatch'); return; }
       done(a.value);
     });
     box.querySelector('[data-no]').addEventListener('click', () => done(null));
@@ -126,34 +130,32 @@ export function passwordDialog({ title, text = '', confirm = false, ok = 'Acepta
 /** Formulario de carpeta inteligente. Resuelve con { name, rules } o null. */
 export function smartDialog({ folders, value }) {
   const r = value?.rules || {};
-  const chk = (k, label) => `<label class="chk"><input type="checkbox" name="${k}" ${r[k] ? 'checked' : ''}> ${label}</label>`;
+  const chk = (k) => `<label class="chk"><input type="checkbox" name="${k}" ${r[k] ? 'checked' : ''}> ${esc(tr(`smartdlg.${k}`))}</label>`;
   return dialog((box, done) => {
     box.classList.add('form');
-    box.innerHTML = `<h2>${value ? 'Editar carpeta inteligente' : 'Carpeta inteligente nueva'}</h2>
-      <p class="muted" style="margin:0 0 12px">Reúne por sí sola las notas que cumplan todo lo que marques.</p>
-      <label class="fld">Nombre<input type="text" name="name" value="${esc(value?.name || '')}" placeholder="Por ejemplo: Pendientes con tareas"></label>
-      <div class="chk-grid">
-        ${chk('tasks', 'Tienen lista de tareas')}${chk('images', 'Tienen imágenes')}${chk('files', 'Tienen archivos adjuntos')}${chk('tables', 'Tienen tablas')}${chk('pinned', 'Están fijadas')}
-      </div>
-      <label class="fld">Etiquetas (separadas por espacio, sin #)<input type="text" name="tags" value="${esc((r.tags || []).join(' '))}" placeholder="ideas pendientes"></label>
-      <label class="fld">Contienen el texto<input type="text" name="text" value="${esc(r.text || '')}"></label>
-      <label class="fld">Búsqueda avanzada<input type="text" name="query" value="${esc(r.query || '')}" placeholder='tag:ideas tiene:imagen "frase exacta"'></label>
-      <label class="fld">En la carpeta
-        <select name="folderId"><option value="">Cualquiera</option>${folders.map((f) => `<option value="${esc(f.id)}" ${r.folderId === f.id ? 'selected' : ''}>${esc(f.name)}</option>`).join('')}</select>
+    box.innerHTML = `<h2>${esc(value ? tr('smartdlg.editTitle') : tr('smartdlg.newTitle'))}</h2>
+      <p class="muted" style="margin:0 0 12px">${esc(tr('smartdlg.intro'))}</p>
+      <label class="fld">${esc(tr('smartdlg.name'))}<input type="text" name="name" value="${esc(value?.name || '')}" placeholder="${esc(tr('smartdlg.namePh'))}"></label>
+      <div class="chk-grid">${['tasks', 'images', 'files', 'tables', 'pinned'].map(chk).join('')}</div>
+      <label class="fld">${esc(tr('smartdlg.tags'))}<input type="text" name="tags" value="${esc((r.tags || []).join(' '))}" placeholder="${esc(tr('smartdlg.tagsPh'))}"></label>
+      <label class="fld">${esc(tr('smartdlg.text'))}<input type="text" name="text" value="${esc(r.text || '')}"></label>
+      <label class="fld">${esc(tr('smartdlg.query'))}<input type="text" name="query" value="${esc(r.query || '')}" placeholder="${esc(tr('smartdlg.queryPh'))}"></label>
+      <label class="fld">${esc(tr('smartdlg.folder'))}
+        <select name="folderId"><option value="">${esc(tr('smartdlg.anyFolder'))}</option>${folders.map((f) => `<option value="${esc(f.id)}" ${r.folderId === f.id ? 'selected' : ''}>${esc(f.name)}</option>`).join('')}</select>
       </label>
       <p class="form-error" role="alert"></p>
-      <div class="row"><button type="button" data-no>Cancelar</button><button type="submit" class="btn-primary">${value ? 'Guardar' : 'Crear carpeta'}</button></div>`;
+      <div class="row">${cancelBtn()}<button type="submit" class="btn-primary">${esc(value ? tr('common.save') : tr('folder.create'))}</button></div>`;
     const f = (n) => box.elements[n];
     box.addEventListener('submit', (e) => {
       e.preventDefault();
       const rules = {
         tasks: f('tasks').checked, images: f('images').checked, files: f('files').checked, tables: f('tables').checked, pinned: f('pinned').checked,
-        tags: f('tags').value.split(/[\s,#]+/).map((t) => t.trim().toLowerCase()).filter(Boolean),
+        tags: f('tags').value.split(/[\s,#]+/).map((w) => w.trim().toLowerCase()).filter(Boolean),
         text: f('text').value.trim(), query: f('query').value.trim(), folderId: f('folderId').value,
       };
       const any = rules.tasks || rules.images || rules.files || rules.tables || rules.pinned || rules.tags.length || rules.text || rules.query || rules.folderId;
-      if (!f('name').value.trim()) { box.querySelector('.form-error').textContent = 'Ponle un nombre a la carpeta.'; return; }
-      if (!any) { box.querySelector('.form-error').textContent = 'Marca al menos una condición.'; return; }
+      if (!f('name').value.trim()) { box.querySelector('.form-error').textContent = tr('smartdlg.errName'); return; }
+      if (!any) { box.querySelector('.form-error').textContent = tr('smartdlg.errCond'); return; }
       done({ id: value?.id, name: f('name').value.trim(), rules });
     });
     box.querySelector('[data-no]').addEventListener('click', () => done(null));
@@ -165,12 +167,10 @@ export function smartDialog({ folders, value }) {
 export function importDialog() {
   return dialog((box, done) => {
     box.classList.add('form');
-    box.innerHTML = `<h2>Importar notas</h2>
-      <p class="muted" style="margin:0 0 12px">Las notas se agregan a Libreta; tus archivos originales no se tocan.</p>
-      <button type="button" class="import-opt" data-k="folder"><b>Carpeta de notas</b><span>Markdown, texto o HTML con subcarpetas, imágenes y adjuntos. Sirve para Joplin, Obsidian, Bear y Notion, y para Apple Notes si antes la exportas con una herramienta de terceros (Apple Notes no exporta por sí sola).</span></button>
-      <button type="button" class="import-opt" data-k="enex"><b>Evernote (.enex)</b><span>Exporta tus libretas desde Evernote y elige los archivos. Se conservan etiquetas, fechas, imágenes y adjuntos.</span></button>
-      <button type="button" class="import-opt" data-k="files"><b>Archivos sueltos</b><span>Uno o varios archivos .md, .txt o .html.</span></button>
-      <div class="row"><button type="button" data-no>Cancelar</button></div>`;
+    box.innerHTML = `<h2>${esc(tr('import.title'))}</h2>
+      <p class="muted" style="margin:0 0 12px">${esc(tr('import.intro'))}</p>
+      ${['folder', 'enex', 'files'].map((k) => `<button type="button" class="import-opt" data-k="${k}"><b>${esc(tr(`import.${k}.t`))}</b><span>${esc(tr(`import.${k}.d`))}</span></button>`).join('')}
+      <div class="row">${cancelBtn()}</div>`;
     box.querySelectorAll('.import-opt').forEach((b) => b.addEventListener('click', () => done(b.dataset.k)));
     box.querySelector('[data-no]').addEventListener('click', () => done(null));
     setTimeout(() => box.querySelector('.import-opt').focus());
@@ -184,12 +184,12 @@ export function importDialog() {
 export function historyDialog({ versions, load, fmt }) {
   return dialog((box, done) => {
     box.classList.add('wide', 'hist');
-    box.innerHTML = `<h2>Historial de versiones</h2>
+    box.innerHTML = `<h2>${esc(tr('hist.title'))}</h2>
       <div class="hist-body">
-        <div class="hist-list" role="listbox" aria-label="Versiones"></div>
+        <div class="hist-list" role="listbox" aria-label="${esc(tr('hist.versions'))}"></div>
         <div class="hist-view"><div class="ProseMirror hist-doc" aria-live="polite"></div></div>
       </div>
-      <div class="row"><button type="button" data-no>Cerrar</button><button type="submit" class="btn-primary">Restaurar esta versión</button></div>`;
+      <div class="row"><button type="button" data-no>${esc(tr('hist.close'))}</button><button type="submit" class="btn-primary">${esc(tr('hist.restore'))}</button></div>`;
     const list = box.querySelector('.hist-list');
     const view = box.querySelector('.hist-doc');
     let cur = versions[0].t;
@@ -197,14 +197,14 @@ export function historyDialog({ versions, load, fmt }) {
       cur = t;
       list.querySelectorAll('button').forEach((b) => b.setAttribute('aria-selected', String(Number(b.dataset.t) === t)));
       const v = await load(t);
-      view.innerHTML = v?.html || '<p>(vacía)</p>';
+      view.innerHTML = v?.html || `<p>${esc(tr('hist.empty'))}</p>`;
     };
     for (const v of versions) {
       const b = document.createElement('button');
       b.type = 'button';
       b.dataset.t = v.t;
       b.setAttribute('role', 'option');
-      b.innerHTML = `<b>${esc(fmt(v.t))}</b><span>${esc(v.title || 'Sin título')}</span><small>${v.chars} caracteres</small>`;
+      b.innerHTML = `<b>${esc(fmt(v.t))}</b><span>${esc(v.title || tr('hist.untitled'))}</span><small>${esc(tr('hist.chars', { n: v.chars }))}</small>`;
       b.addEventListener('click', () => show(v.t));
       list.append(b);
     }
@@ -217,40 +217,39 @@ export function historyDialog({ versions, load, fmt }) {
 
 let toastTimer;
 export function toast(msg) {
-  const t = document.getElementById('toast');
-  t.textContent = msg;
-  t.classList.add('show');
+  const el = document.getElementById('toast');
+  el.textContent = msg;
+  el.classList.add('show');
   clearTimeout(toastTimer);
-  toastTimer = setTimeout(() => t.classList.remove('show'), 2400);
+  toastTimer = setTimeout(() => el.classList.remove('show'), 2400);
 }
 
-// ---- fechas en español
+// ---- fechas: el idioma sale de la interfaz (se crean al usarlas, porque el idioma se fija al arrancar)
 const DAY = 864e5;
 const startOfDay = (t) => { const d = new Date(t); d.setHours(0, 0, 0, 0); return d.getTime(); };
-const fmt = (opts) => new Intl.DateTimeFormat('es-MX', opts);
-const fTime = fmt({ hour: '2-digit', minute: '2-digit' });
-const fWeekday = fmt({ weekday: 'long' });
-const fShort = fmt({ day: '2-digit', month: '2-digit', year: '2-digit' });
-const fLong = fmt({ dateStyle: 'long', timeStyle: 'short' });
-const fMonth = fmt({ month: 'long' });
-const fMonthYear = fmt({ month: 'long', year: 'numeric' });
+const formatters = new Map();
+function fmt(opts) {
+  const key = `${locale()}|${JSON.stringify(opts)}`;
+  if (!formatters.has(key)) formatters.set(key, new Intl.DateTimeFormat(locale(), opts));
+  return formatters.get(key);
+}
 
 export function shortDate(t) {
   const diff = startOfDay(Date.now()) - startOfDay(t);
-  if (diff <= 0) return fTime.format(t);
-  if (diff === DAY) return 'Ayer';
-  if (diff < 7 * DAY) return fWeekday.format(t);
-  return fShort.format(t);
+  if (diff <= 0) return fmt({ hour: '2-digit', minute: '2-digit' }).format(t);
+  if (diff === DAY) return tr('date.yesterday');
+  if (diff < 7 * DAY) return fmt({ weekday: 'long' }).format(t);
+  return fmt({ day: '2-digit', month: '2-digit', year: '2-digit' }).format(t);
 }
-export const longDate = (t) => fLong.format(t);
+export const longDate = (t) => fmt({ dateStyle: 'long', timeStyle: 'short' }).format(t);
 
 export function groupLabel(t) {
   const diff = startOfDay(Date.now()) - startOfDay(t);
-  if (diff <= 0) return 'Hoy';
-  if (diff === DAY) return 'Ayer';
-  if (diff < 7 * DAY) return 'Últimos 7 días';
-  if (diff < 30 * DAY) return 'Últimos 30 días';
+  if (diff <= 0) return tr('date.today');
+  if (diff === DAY) return tr('date.yesterday');
+  if (diff < 7 * DAY) return tr('date.last7');
+  if (diff < 30 * DAY) return tr('date.last30');
   const d = new Date(t);
-  const label = d.getFullYear() === new Date().getFullYear() ? fMonth.format(d) : fMonthYear.format(d);
+  const label = d.getFullYear() === new Date().getFullYear() ? fmt({ month: 'long' }).format(d) : fmt({ month: 'long', year: 'numeric' }).format(d);
   return label.charAt(0).toUpperCase() + label.slice(1);
 }

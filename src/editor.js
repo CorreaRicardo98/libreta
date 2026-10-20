@@ -11,6 +11,7 @@ import { TableHeader } from '@tiptap/extension-table-header';
 import { TableCell } from '@tiptap/extension-table-cell';
 import { Attachment } from './attachment.js';
 import { NoteLink } from './notelink.js';
+import { t } from './i18n.js';
 
 const api = window.libreta;
 
@@ -63,7 +64,7 @@ function wikiSuggest(links) {
       b.type = 'button';
       b.setAttribute('role', 'option');
       b.setAttribute('aria-selected', String(i === active));
-      b.textContent = it.create ? `Crear nota «${range.query.trim()}»` : it.title || 'Nota sin título';
+      b.textContent = it.create ? t('editor.createNote', { title: range.query.trim() }) : it.title || t('note.untitled');
       if (it.create) b.className = 'wiki-create';
       b.addEventListener('mousedown', (e) => { e.preventDefault(); apply(it); });
       pop.append(b);
@@ -111,7 +112,7 @@ export function createEditor({ element, onUpdate, onSelection, onLink, links }) 
     element,
     extensions: [
       StarterKit.configure({ link: { openOnClick: false, autolink: true, defaultProtocol: 'https' } }),
-      Placeholder.configure({ placeholder: 'Escribe el título aquí…' }),
+      Placeholder.configure({ placeholder: t('editor.titlePh') }),
       Highlight,
       Image,
       Attachment,
@@ -123,7 +124,7 @@ export function createEditor({ element, onUpdate, onSelection, onLink, links }) 
     ],
     content: '',
     editorProps: {
-      attributes: { spellcheck: 'true', 'aria-label': 'Contenido de la nota', role: 'textbox', 'aria-multiline': 'true' },
+      attributes: { spellcheck: 'true', 'aria-label': t('editor.aria'), role: 'textbox', 'aria-multiline': 'true' },
       handlePaste(_view, event) {
         const files = droppedFiles(event.clipboardData);
         if (!files.length) return false;

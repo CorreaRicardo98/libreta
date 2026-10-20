@@ -6,6 +6,7 @@ const { Store } = require('./store');
 const importer = require('./importer');
 const { createUpdater } = require('./updater');
 const prefsLib = require('./prefs');
+const i18n = require('./i18n');
 
 const DEV = !!process.env.LIBRETA_DEV;
 let win = null;
@@ -29,16 +30,22 @@ function writeSettings(s) {
 const autoUpdates = () => readSettings().autoUpdate !== false; // activado salvo que la persona lo apague
 
 // ---- preferencias de apariencia (el tema se aplica con nativeTheme: también cambia menús y diálogos del sistema)
-const getPrefs = () => ({ ...prefsLib.withDefaults(readSettings().prefs), autoUpdate: autoUpdates() });
+// lang es el idioma efectivo (el elegido o, en «automático», el del sistema); language es lo que eligió la persona
+const getPrefs = () => {
+  const p = prefsLib.withDefaults(readSettings().prefs);
+  return { ...p, autoUpdate: autoUpdates(), lang: i18n.resolveLang(p.language, app.getLocale()) };
+};
+const T = (key, vars) => i18n.translator(getPrefs().lang)(key, vars);
 const applyTheme = () => { nativeTheme.themeSource = getPrefs().theme; };
 function setPrefs(patch) {
   const settings = readSettings();
   const next = { ...settings, prefs: { ...(settings.prefs || {}), ...prefsLib.sanitize(patch) } };
   const autoChanged = typeof patch?.autoUpdate === 'boolean' && patch.autoUpdate !== autoUpdates();
+  const langBefore = getPrefs().lang;
   if (typeof patch?.autoUpdate === 'boolean') next.autoUpdate = patch.autoUpdate;
   writeSettings(next);
   applyTheme();
-  if (autoChanged) buildMenu(); // la casilla del menú Ayuda debe reflejar el cambio
+  if (autoChanged || getPrefs().lang !== langBefore) buildMenu(); // la casilla de Ayuda y los textos del menú deben reflejar el cambio
   return getPrefs();
 }
 const defaultVault = () => path.join(app.getPath('documents'), 'Libreta');
@@ -86,57 +93,57 @@ function buildMenu() {
   Menu.setApplicationMenu(Menu.buildFromTemplate([
     ...(mac ? [{ role: 'appMenu' }] : []),
     {
-      label: 'Archivo',
+      label: T('menu.file'),
       submenu: [
-        { label: 'Nota nueva', accelerator: 'CmdOrCtrl+N', click: send('new-note') },
-        { label: 'Carpeta nueva', accelerator: 'CmdOrCtrl+Shift+N', click: send('new-folder') },
+        { label: T('note.newDefault'), accelerator: 'CmdOrCtrl+N', click: send('new-note') },
+        { label: T('folder.newTitle'), accelerator: 'CmdOrCtrl+Shift+N', click: send('new-folder') },
         { type: 'separator' },
-        { label: 'Importar notas…', click: send('import') },
-        { label: 'Exportar como PDF…', click: send('export-pdf') },
-        { label: 'Exportar como HTML…', click: send('export-html') },
-        { label: 'Exportar como Markdown…', click: send('export-md') },
+        { label: T('folder.importMenu'), click: send('import') },
+        { label: T('menu.exportPdf'), click: send('export-pdf') },
+        { label: T('menu.exportHtml'), click: send('export-html') },
+        { label: T('menu.exportMd'), click: send('export-md') },
         { type: 'separator' },
-        { label: 'Ajustes…', accelerator: 'CmdOrCtrl+,', click: send('settings') },
-        { label: 'Abrir carpeta de notas', click: () => shell.openPath(store.dir) },
-        { label: 'Cambiar carpeta de notas…', click: send('change-vault') },
+        { label: T('menu.settings'), accelerator: 'CmdOrCtrl+,', click: send('settings') },
+        { label: T('menu.openVault'), click: () => shell.openPath(store.dir) },
+        { label: T('menu.changeVault'), click: send('change-vault') },
         { type: 'separator' },
-        mac ? { role: 'close' } : { role: 'quit', label: 'Salir' },
+        mac ? { role: 'close' } : { role: 'quit', label: T('menu.quit') },
       ],
     },
     {
-      label: 'Edición',
+      label: T('menu.edit'),
       submenu: [
-        { role: 'undo', label: 'Deshacer' }, { role: 'redo', label: 'Rehacer' },
+        { role: 'undo', label: T('menu.undo') }, { role: 'redo', label: T('menu.redo') },
         { type: 'separator' },
-        { role: 'cut', label: 'Cortar' }, { role: 'copy', label: 'Copiar' },
-        { role: 'paste', label: 'Pegar' }, { role: 'selectAll', label: 'Seleccionar todo' },
+        { role: 'cut', label: T('menu.cut') }, { role: 'copy', label: T('menu.copy') },
+        { role: 'paste', label: T('menu.paste') }, { role: 'selectAll', label: T('menu.selectAll') },
         { type: 'separator' },
-        { label: 'Buscar notas', accelerator: 'CmdOrCtrl+F', click: send('focus-search') },
+        { label: T('menu.search'), accelerator: 'CmdOrCtrl+F', click: send('focus-search') },
       ],
     },
     {
-      label: 'Ayuda',
+      label: T('menu.help'),
       submenu: [
-        { label: 'Guía rápida', accelerator: 'F1', click: send('help') },
-        { label: 'Atajos de teclado', click: send('help-keys') },
+        { label: T('side.help'), accelerator: 'F1', click: send('help') },
+        { label: T('menu.shortcuts'), click: send('help-keys') },
         { type: 'separator' },
-        { label: 'Buscar actualizaciones…', click: () => updater?.check({ manual: true }) },
-        { label: 'Buscar actualizaciones automáticamente', type: 'checkbox', checked: autoUpdates(), click: (item) => writeSettings({ ...readSettings(), autoUpdate: item.checked }) },
+        { label: T('menu.checkUpdates'), click: () => updater?.check({ manual: true }) },
+        { label: T('set.auto'), type: 'checkbox', checked: autoUpdates(), click: (item) => writeSettings({ ...readSettings(), autoUpdate: item.checked }) },
         { type: 'separator' },
-        { label: 'Reportar un error…', click: () => shell.openExternal('https://github.com/CorreaRicardo98/libreta/issues/new/choose') },
-        { label: 'Código y comunidad', click: () => shell.openExternal('https://github.com/CorreaRicardo98/libreta') },
+        { label: T('menu.report'), click: () => shell.openExternal('https://github.com/CorreaRicardo98/libreta/issues/new/choose') },
+        { label: T('help.code'), click: () => shell.openExternal('https://github.com/CorreaRicardo98/libreta') },
       ],
     },
     {
-      label: 'Ver',
+      label: T('menu.view'),
       submenu: [
-        { label: 'Como lista', accelerator: 'CmdOrCtrl+1', click: send('view-list') },
-        { label: 'Como galería', accelerator: 'CmdOrCtrl+2', click: send('view-gallery') },
+        { label: T('list.asList'), accelerator: 'CmdOrCtrl+1', click: send('view-list') },
+        { label: T('list.asGallery'), accelerator: 'CmdOrCtrl+2', click: send('view-gallery') },
         { type: 'separator' },
-        { role: 'zoomIn', label: 'Acercar' }, { role: 'zoomOut', label: 'Alejar' },
-        { role: 'resetZoom', label: 'Tamaño real' },
+        { role: 'zoomIn', label: T('menu.zoomIn') }, { role: 'zoomOut', label: T('menu.zoomOut') },
+        { role: 'resetZoom', label: T('menu.resetZoom') },
         { type: 'separator' },
-        { role: 'togglefullscreen', label: 'Pantalla completa' },
+        { role: 'togglefullscreen', label: T('menu.fullscreen') },
         ...(DEV ? [{ role: 'toggleDevTools' }] : []),
       ],
     },
@@ -180,16 +187,16 @@ function registerIpc() {
   h('import:run', async (kind) => {
     const filters = {
       enex: [{ name: 'Evernote', extensions: ['enex'] }],
-      files: [{ name: 'Notas', extensions: ['md', 'markdown', 'txt', 'html', 'htm'] }],
+      files: [{ name: T('dlg.notesFilter'), extensions: ['md', 'markdown', 'txt', 'html', 'htm'] }],
     };
     const r = await dialog.showOpenDialog(win, {
-      title: { folder: 'Elige la carpeta con tus notas', enex: 'Elige los archivos de Evernote', files: 'Elige los archivos de notas' }[kind],
+      title: { folder: T('dlg.importFolder'), enex: T('dlg.importEnex'), files: T('dlg.importFiles') }[kind],
       properties: kind === 'folder' ? ['openDirectory'] : ['openFile', 'multiSelections'],
       filters: filters[kind],
     });
     if (r.canceled || !r.filePaths.length) return null;
     if (kind === 'folder') return importer.importFolder(store, r.filePaths[0]);
-    if (kind === 'files') return importer.importLoose(store, r.filePaths);
+    if (kind === 'files') return importer.importLoose(store, r.filePaths, T('import.looseFolder'));
     const all = { items: [], skipped: [] };
     for (const f of r.filePaths) {
       const x = importer.importEnex(store, f);
@@ -200,7 +207,7 @@ function registerIpc() {
 
   h('attach:open', async (url) => {
     const m = /^libreta:\/\/att\/([\w.-]+)$/.exec(String(url));
-    if (!m) return 'enlace no válido';
+    if (!m) return 'invalid link';
     return shell.openPath(store.attachmentPath(m[1]));
   });
 
@@ -216,7 +223,7 @@ function registerIpc() {
   h('vault:open', () => shell.openPath(store.dir));
   h('vault:change', async () => {
     const r = await dialog.showOpenDialog(win, {
-      title: 'Elige la carpeta donde guardar tus notas',
+      title: T('dlg.vault'),
       properties: ['openDirectory', 'createDirectory'],
     });
     if (r.canceled || !r.filePaths[0]) return null;
@@ -227,7 +234,7 @@ function registerIpc() {
   });
 
   h('export:note', async (kind, title, html) => {
-    const safe = (title || 'Nota sin título').replace(/[\\/:*?"<>|]/g, '_').slice(0, 80);
+    const safe = (title || T('note.untitled')).replace(/[\\/:*?"<>|]/g, '_').slice(0, 80);
     const ext = kind === 'pdf' ? 'pdf' : kind === 'md' ? 'md' : 'html';
     const r = await dialog.showSaveDialog(win, {
       defaultPath: path.join(app.getPath('documents'), `${safe}.${ext}`),
@@ -243,7 +250,7 @@ function registerIpc() {
         return `data:${mime};base64,${fs.readFileSync(p).toString('base64')}`;
       } catch { return ''; }
     });
-    const doc = `<!doctype html><html lang="es"><meta charset="utf-8"><title>${escapeHtml(safe)}</title>
+    const doc = `<!doctype html><html lang="${getPrefs().lang}"><meta charset="utf-8"><title>${escapeHtml(safe)}</title>
 <style>body{font:16px/1.6 Georgia,serif;max-width:46rem;margin:2rem auto;padding:0 1rem;color:#1b2430}
 img{max-width:100%}table{border-collapse:collapse}td,th{border:1px solid #bbb;padding:.35rem .6rem}
 blockquote{border-left:3px solid #999;margin-left:0;padding-left:1rem;color:#555}
@@ -263,7 +270,7 @@ pre,code{font-family:ui-monospace,Consolas,monospace;background:#f1f2f4}</style>
 function writeMarkdown(file, md) {
   const names = [...new Set([...md.matchAll(/libreta:\/\/att\/([\w.-]+)/g)].map((m) => m[1]))];
   if (names.length) {
-    const folder = `${path.basename(file, '.md')}_adjuntos`;
+    const folder = `${path.basename(file, '.md')}${T('export.attachmentsSuffix')}`;
     const dest = path.join(path.dirname(file), folder);
     fs.mkdirSync(dest, { recursive: true });
     for (const n of names) {
@@ -284,7 +291,7 @@ else {
   app.whenReady().then(() => {
     protocol.handle('libreta', (req) => {
       const u = new URL(req.url);
-      if (u.hostname !== 'att') return new Response('no encontrado', { status: 404 });
+      if (u.hostname !== 'att') return new Response('not found', { status: 404 });
       const file = store.attachmentPath(decodeURIComponent(u.pathname.slice(1)));
       return net.fetch(pathToFileURL(file).toString());
     });
@@ -292,7 +299,7 @@ else {
     session.defaultSession.setPermissionRequestHandler((_wc, perm, cb) => cb(perm === 'media'));
     session.defaultSession.setPermissionCheckHandler((_wc, perm) => perm === 'media');
     applyTheme();
-    store = new Store(readSettings().vault || defaultVault());
+    store = new Store(readSettings().vault || defaultVault(), { defaultFolderName: T('folder.defaultName') });
     registerIpc();
     buildMenu();
     createWindow();

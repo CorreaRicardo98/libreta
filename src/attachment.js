@@ -1,4 +1,5 @@
 import { Node } from '@tiptap/core';
+import { t } from './i18n.js';
 
 const api = window.libreta;
 
@@ -20,7 +21,7 @@ export const Attachment = Node.create({
   addAttributes() {
     return {
       src: { default: '', parseHTML: (el) => el.getAttribute('data-src') },
-      name: { default: 'archivo', parseHTML: (el) => el.getAttribute('data-name') },
+      name: { default: t('att.defaultName'), parseHTML: (el) => el.getAttribute('data-name') },
       size: { default: 0, parseHTML: (el) => Number(el.getAttribute('data-size')) || 0 },
     };
   },
@@ -38,8 +39,9 @@ export const Attachment = Node.create({
       dom.className = 'att-card';
       dom.contentEditable = 'false';
       const ext = (node.attrs.name.split('.').pop() || '').slice(0, 4).toUpperCase();
-      dom.innerHTML = `<span class="att-ext"></span><span class="att-info"><b></b><small></small></span><button type="button" class="att-open">Abrir</button>`;
-      dom.querySelector('.att-ext').textContent = ext || 'ARCH';
+      dom.innerHTML = `<span class="att-ext"></span><span class="att-info"><b></b><small></small></span><button type="button" class="att-open"></button>`;
+      dom.querySelector('.att-open').textContent = t('att.open');
+      dom.querySelector('.att-ext').textContent = ext || t('att.extFallback');
       dom.querySelector('b').textContent = node.attrs.name;
       dom.querySelector('small').textContent = humanSize(node.attrs.size);
       const open = () => api.openAttachment(node.attrs.src);

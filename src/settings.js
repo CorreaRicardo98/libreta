@@ -1,5 +1,6 @@
 // Ajustes: apariencia, notas y programa. Los cambios se aplican al instante.
 import { dialog, esc } from './ui.js';
+import { t } from './i18n.js';
 
 const FONT_STACK = { serif: 'var(--serif)', sans: 'var(--ui)', mono: 'var(--mono)' };
 const WIDTH_REM = { narrow: '38rem', normal: '46rem', wide: '62rem' };
@@ -14,64 +15,60 @@ export function applyPrefs(p) {
   r.style.setProperty('--doc-width', WIDTH_REM[p.width] || WIDTH_REM.normal);
 }
 
-const THEMES = [['system', 'Automático'], ['light', 'Claro'], ['dark', 'Oscuro']];
-const ACCENTS = [['azul', 'Azul', '#2640c4'], ['verde', 'Verde', '#0f7a55'], ['violeta', 'Violeta', '#6b3fd1'],
-  ['coral', 'Coral', '#c23b3b'], ['ambar', 'Ámbar', '#a85d00'], ['grafito', 'Grafito', '#374151']];
-const FONTS = [['serif', 'Con serifas'], ['sans', 'Sin serifas'], ['mono', 'Monoespaciada']];
-const SIZES = [[15, 'Pequeño'], [17, 'Mediano'], [19, 'Grande'], [21, 'Muy grande']];
-const WIDTHS = [['narrow', 'Estrecho'], ['normal', 'Normal'], ['wide', 'Ancho']];
-const VIEWS = [['list', 'Lista'], ['gallery', 'Galería']];
-const SORTS = [['updated', 'Edición'], ['created', 'Creación'], ['title', 'Título']];
+const ACCENTS = [['azul', '#2640c4'], ['verde', '#0f7a55'], ['violeta', '#6b3fd1'], ['coral', '#c23b3b'], ['ambar', '#a85d00'], ['grafito', '#374151']];
 
-const seg = (key, label, opts) => `
+/** Fila con botones segmentados. Las etiquetas se buscan en set.<clave>.<valor>. */
+const seg = (key, values) => `
   <div class="set-row">
-    <span class="set-label" id="lb-${key}">${esc(label)}</span>
+    <span class="set-label" id="lb-${key}">${esc(t(`set.${key}`))}</span>
     <div class="seg" role="group" aria-labelledby="lb-${key}">
-      ${opts.map(([v, t]) => `<button type="button" class="seg-btn txt" data-key="${key}" data-val="${esc(v)}">${esc(t)}</button>`).join('')}
+      ${values.map((v) => `<button type="button" class="seg-btn txt" data-key="${key}" data-val="${esc(v)}">${esc(t(`set.${key}.${v}`))}</button>`).join('')}
     </div>
   </div>`;
 
 /**
  * prefs: preferencias actuales. api: window.libreta.
- * view/sort: valores actuales de la lista; onView/onSort/onChangeVault: acciones de la app.
+ * view/sort: valores actuales de la lista; onView/onSort/onChangeVault/onLanguage: acciones de la app.
  */
-export function settingsDialog({ prefs, api, vault, view, sort, onView, onSort, onChangeVault }) {
+export function settingsDialog({ prefs, api, vault, view, sort, onView, onSort, onChangeVault, onLanguage }) {
   return dialog((box, done) => {
     box.classList.add('form', 'settings');
     const state = { ...prefs, view, sort };
     box.innerHTML = `
-      <h2>Ajustes</h2>
+      <h2>${esc(t('set.title'))}</h2>
       <section aria-labelledby="s-look">
-        <h3 id="s-look">Apariencia</h3>
-        ${seg('theme', 'Tema', THEMES)}
-        <p class="set-hint">«Automático» sigue el tema claro u oscuro de tu sistema.</p>
+        <h3 id="s-look">${esc(t('set.look'))}</h3>
+        ${seg('theme', ['system', 'light', 'dark'])}
+        <p class="set-hint">${esc(t('set.themeHint'))}</p>
         <div class="set-row">
-          <span class="set-label" id="lb-accent">Color</span>
+          <span class="set-label" id="lb-accent">${esc(t('set.color'))}</span>
           <div class="swatches" role="group" aria-labelledby="lb-accent">
-            ${ACCENTS.map(([v, t, c]) => `<button type="button" class="sw" data-key="accent" data-val="${v}" style="--c:${c}" aria-label="${esc(t)}" title="${esc(t)}"></button>`).join('')}
+            ${ACCENTS.map(([v, c]) => `<button type="button" class="sw" data-key="accent" data-val="${v}" style="--c:${c}" aria-label="${esc(t(`set.accent.${v}`))}" title="${esc(t(`set.accent.${v}`))}"></button>`).join('')}
           </div>
         </div>
-        ${seg('font', 'Letra de las notas', FONTS)}
-        ${seg('size', 'Tamaño del texto', SIZES)}
-        ${seg('width', 'Ancho de la página', WIDTHS)}
-        <div class="pref-sample" aria-hidden="true"><b>Así se verá tu texto.</b> Libreta guarda cada nota como un archivo en tu carpeta, y tú decides cómo leerla.</div>
+        ${seg('language', ['system', 'es', 'en'])}
+        <p class="set-hint">${esc(t('set.languageHint'))}</p>
+        ${seg('font', ['serif', 'sans', 'mono'])}
+        ${seg('size', ['15', '17', '19', '21'])}
+        ${seg('width', ['narrow', 'normal', 'wide'])}
+        <div class="pref-sample" aria-hidden="true"><b>${esc(t('set.sampleLead'))}</b> ${esc(t('set.sampleRest'))}</div>
       </section>
       <section aria-labelledby="s-notes">
-        <h3 id="s-notes">Notas</h3>
-        ${seg('view', 'Vista de la lista', VIEWS)}
-        ${seg('sort', 'Ordenar por', SORTS)}
+        <h3 id="s-notes">${esc(t('set.notes'))}</h3>
+        ${seg('view', ['list', 'gallery'])}
+        ${seg('sort', ['updated', 'created', 'title'])}
         <div class="set-row">
-          <span class="set-label">Carpeta de notas</span>
+          <span class="set-label">${esc(t('set.vault'))}</span>
           <div class="set-vault"><code title="${esc(vault)}">${esc(vault)}</code>
-            <button type="button" data-act="open">Abrir</button><button type="button" data-act="change">Cambiar…</button></div>
+            <button type="button" data-act="open">${esc(t('set.open'))}</button><button type="button" data-act="change">${esc(t('set.change'))}</button></div>
         </div>
       </section>
       <section aria-labelledby="s-app">
-        <h3 id="s-app">Programa</h3>
+        <h3 id="s-app">${esc(t('set.app'))}</h3>
         <label class="chk set-chk"><input type="checkbox" id="set-auto" ${prefs.autoUpdate ? 'checked' : ''}>
-          <span>Buscar actualizaciones automáticamente<small>Consulta cada pocas horas la lista de versiones de GitHub. Nada se instala sin que lo aceptes.</small></span></label>
+          <span>${esc(t('set.auto'))}<small>${esc(t('set.autoHint'))}</small></span></label>
       </section>
-      <div class="row"><button type="button" data-act="reset">Restablecer apariencia</button><button type="button" data-no class="btn-primary">Listo</button></div>`;
+      <div class="row"><button type="button" data-act="reset">${esc(t('set.reset'))}</button><button type="button" data-no class="btn-primary">${esc(t('set.done'))}</button></div>`;
 
     const paint = () => {
       box.querySelectorAll('[data-key]').forEach((b) => {
@@ -86,6 +83,7 @@ export function settingsDialog({ prefs, api, vault, view, sort, onView, onSort, 
       if (s) onSort(s);
       if (Object.keys(appearance).length) { Object.assign(state, await api.prefs.set(appearance)); applyPrefs(state); }
       paint();
+      if (patch.language) { done(null); onLanguage(); } // el idioma se aplica al volver a cargar la interfaz
     };
 
     box.addEventListener('click', async (e) => {

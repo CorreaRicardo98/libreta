@@ -2,6 +2,15 @@
 
 Todas las versiones notables de Libreta. El formato sigue [Keep a Changelog](https://keepachangelog.com/es-ES/1.1.0/) y el proyecto usa [versionado semántico](https://semver.org/lang/es/).
 
+## [1.5.0] - 2026-10-20
+### Agregado
+- **Interfaz en inglés** además del español. Libreta usa el idioma de tu sistema (español si es español, inglés en cualquier otro caso) y puedes cambiarlo en **Ajustes → Idioma**; al cambiarlo se vuelve a cargar la interfaz.
+- Todos los textos viven ahora en `src/locales/es.json` y `src/locales/en.json`, y hay pruebas que comprueban que ambos idiomas tengan las mismas claves, las mismas variables y que el inglés no deje palabras en español. Agregar otro idioma es copiar un archivo (ver CONTRIBUTING).
+- Los filtros de búsqueda ya existían en inglés (`tag:`, `folder:`, `has:`, `is:`, `before:`, `after:`) y ahora la guía y las sugerencias los muestran según el idioma.
+
+### Cambiado
+- La carpeta inicial, la nota de bienvenida, el menú, los diálogos del sistema y las exportaciones se escriben en el idioma elegido. Las notas y carpetas que ya tengas no se traducen.
+
 ## [1.4.1] - 2026-10-19
 ### Cambiado
 - Versión de prueba del actualizador automático: no trae cambios de funciones. Sirve para comprobar que una instalación de la 1.4.0 detecta, descarga e instala una versión nueva.
@@ -31,6 +40,7 @@ Todas las versiones notables de Libreta. El formato sigue [Keep a Changelog](htt
 - Importación desde Markdown, texto, HTML y Evernote; exportación a PDF, HTML y Markdown.
 - Tema claro y oscuro según el sistema; icono propio.
 
+[1.5.0]: https://github.com/CorreaRicardo98/libreta/releases/tag/v1.5.0
 [1.4.1]: https://github.com/CorreaRicardo98/libreta/releases/tag/v1.4.1
 [1.4.0]: https://github.com/CorreaRicardo98/libreta/releases/tag/v1.4.0
 [1.3.0]: https://github.com/CorreaRicardo98/libreta/releases/tag/v1.3.0

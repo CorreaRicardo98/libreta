@@ -1,5 +1,6 @@
 // Dibujo a mano y escáner de documentos con la cámara. Ambos devuelven archivos de imagen.
 import { dialog, esc } from './ui.js';
+import { t as tr, tn } from './i18n.js';
 
 const COLORS = ['#1b2430', '#2640c4', '#d6342c', '#1f9d55', '#f2a900', '#8a4fff'];
 
@@ -11,21 +12,21 @@ export function drawDialog() {
   return dialog((box, done) => {
     box.classList.add('wide');
     box.innerHTML = `
-      <h2>Dibujo</h2>
+      <h2>${esc(tr('draw.title'))}</h2>
       <div class="draw-tools">
-        <div class="seg" role="group" aria-label="Herramienta">
-          <button type="button" class="seg-btn txt" data-tool="pen" aria-pressed="true">Lápiz</button>
-          <button type="button" class="seg-btn txt" data-tool="marker" aria-pressed="false">Marcador</button>
-          <button type="button" class="seg-btn txt" data-tool="eraser" aria-pressed="false">Borrador</button>
+        <div class="seg" role="group" aria-label="${esc(tr('draw.tool'))}">
+          <button type="button" class="seg-btn txt" data-tool="pen" aria-pressed="true">${esc(tr('draw.pen'))}</button>
+          <button type="button" class="seg-btn txt" data-tool="marker" aria-pressed="false">${esc(tr('draw.marker'))}</button>
+          <button type="button" class="seg-btn txt" data-tool="eraser" aria-pressed="false">${esc(tr('draw.eraser'))}</button>
         </div>
-        <div class="swatches" role="group" aria-label="Color">${COLORS.map((c, i) => `<button type="button" class="sw" data-color="${c}" style="--c:${c}" aria-label="Color ${i + 1}" aria-pressed="${i === 0}"></button>`).join('')}</div>
-        <label class="grosor">Grosor <input type="range" min="1" max="24" value="3" id="dw-size"></label>
+        <div class="swatches" role="group" aria-label="${esc(tr('draw.color'))}">${COLORS.map((c, i) => `<button type="button" class="sw" data-color="${c}" style="--c:${c}" aria-label="${esc(tr('draw.colorN', { n: i + 1 }))}" aria-pressed="${i === 0}"></button>`).join('')}</div>
+        <label class="grosor">${esc(tr('draw.size'))} <input type="range" min="1" max="24" value="3" id="dw-size"></label>
         <span class="tb-grow"></span>
-        <button type="button" data-undo>Deshacer</button>
-        <button type="button" data-clear>Borrar todo</button>
+        <button type="button" data-undo>${esc(tr('draw.undo'))}</button>
+        <button type="button" data-clear>${esc(tr('draw.clear'))}</button>
       </div>
-      <canvas class="draw-canvas" width="1200" height="720" aria-label="Lienzo de dibujo"></canvas>
-      <div class="row"><button type="button" data-no>Cancelar</button><button type="submit" class="btn-primary">Insertar dibujo</button></div>`;
+      <canvas class="draw-canvas" width="1200" height="720" aria-label="${esc(tr('draw.canvas'))}"></canvas>
+      <div class="row"><button type="button" data-no>${esc(tr('ui.cancel'))}</button><button type="submit" class="btn-primary">${esc(tr('draw.insert'))}</button></div>`;
     const cv = box.querySelector('canvas');
     const ctx = cv.getContext('2d');
     const paper = () => { ctx.globalCompositeOperation = 'source-over'; ctx.fillStyle = '#ffffff'; ctx.fillRect(0, 0, cv.width, cv.height); };
@@ -69,7 +70,7 @@ export function drawDialog() {
     box.querySelector('[data-undo]').addEventListener('click', () => { if (history.length > 1) { history.pop(); ctx.putImageData(history[history.length - 1], 0, 0); } });
     box.querySelector('[data-clear]').addEventListener('click', () => { paper(); history.push(ctx.getImageData(0, 0, cv.width, cv.height)); });
     box.querySelector('[data-no]').addEventListener('click', () => done(null));
-    box.addEventListener('submit', async (e) => { e.preventDefault(); done(await toFile(cv, `dibujo-${Date.now()}.png`)); });
+    box.addEventListener('submit', async (e) => { e.preventDefault(); done(await toFile(cv, `${tr('draw.file')}-${Date.now()}.png`)); });
   });
 }
 
@@ -81,18 +82,18 @@ export function scanDialog(onCapture) {
   return dialog((box, done) => {
     box.classList.add('wide');
     box.innerHTML = `
-      <h2>Escanear documento</h2>
-      <div class="scan-stage"><video autoplay playsinline muted aria-label="Vista de la cámara"></video><p class="scan-msg muted">Abriendo la cámara…</p></div>
+      <h2>${esc(tr('scan.title'))}</h2>
+      <div class="scan-stage"><video autoplay playsinline muted aria-label="${esc(tr('scan.view'))}"></video><p class="scan-msg muted">${esc(tr('scan.opening'))}</p></div>
       <div class="draw-tools">
-        <div class="seg" role="group" aria-label="Filtro">
-          <button type="button" class="seg-btn txt" data-f="doc" aria-pressed="true">Documento</button>
-          <button type="button" class="seg-btn txt" data-f="gray" aria-pressed="false">Grises</button>
-          <button type="button" class="seg-btn txt" data-f="color" aria-pressed="false">Color</button>
+        <div class="seg" role="group" aria-label="${esc(tr('scan.filter'))}">
+          <button type="button" class="seg-btn txt" data-f="doc" aria-pressed="true">${esc(tr('scan.doc'))}</button>
+          <button type="button" class="seg-btn txt" data-f="gray" aria-pressed="false">${esc(tr('scan.gray'))}</button>
+          <button type="button" class="seg-btn txt" data-f="color" aria-pressed="false">${esc(tr('scan.color'))}</button>
         </div>
         <span class="tb-grow"></span>
         <span class="muted" data-count></span>
       </div>
-      <div class="row"><button type="button" data-no>Listo</button><button type="submit" class="btn-primary" disabled>Capturar página</button></div>`;
+      <div class="row"><button type="button" data-no>${esc(tr('scan.done'))}</button><button type="submit" class="btn-primary" disabled>${esc(tr('scan.capture'))}</button></div>`;
     const video = box.querySelector('video');
     const msg = box.querySelector('.scan-msg');
     const shoot = box.querySelector('[type=submit]');
@@ -102,7 +103,7 @@ export function scanDialog(onCapture) {
 
     navigator.mediaDevices.getUserMedia({ video: { width: { ideal: 1920 }, height: { ideal: 1080 } }, audio: false })
       .then((s) => { stream = s; video.srcObject = s; msg.remove(); shoot.disabled = false; })
-      .catch(() => { msg.textContent = 'No se pudo abrir la cámara. Revisa que esté conectada y que ningún otro programa la use.'; });
+      .catch(() => { msg.textContent = tr('scan.camError'); });
 
     box.querySelectorAll('[data-f]').forEach((b) => b.addEventListener('click', () => {
       filter = b.dataset.f;
@@ -127,8 +128,8 @@ export function scanDialog(onCapture) {
         x.putImageData(img, 0, 0);
       }
       n++;
-      box.querySelector('[data-count]').textContent = `${n} ${n === 1 ? 'página insertada' : 'páginas insertadas'}`;
-      await onCapture(await toFile(c, `escaneo-${Date.now()}.jpg`, 'image/jpeg', 0.9));
+      box.querySelector('[data-count]').textContent = tn('scan.count', n);
+      await onCapture(await toFile(c, `${tr('scan.file')}-${Date.now()}.jpg`, 'image/jpeg', 0.9));
     });
     // al cerrar con Escape o clic fuera también hay que soltar la cámara
     const obs = new MutationObserver(() => { if (!document.body.contains(box)) { stop(); obs.disconnect(); } });

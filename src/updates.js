@@ -1,5 +1,6 @@
 // Aviso de versión nueva: una tarjeta discreta en la esquina, sin interrumpir lo que se escribe.
 import { esc } from './ui.js';
+import { t } from './i18n.js';
 
 const api = window.libreta;
 const SKIP_KEY = 'skipUpdate';
@@ -29,12 +30,12 @@ export function initUpdates({ flush, toast }) {
     switch (u.state) {
       case 'available': {
         if (!u.manual && store.get(SKIP_KEY) === u.version) return; // ya dijo «Ahora no» para esta versión
-        show(`<strong>Hay una versión nueva</strong>
-          <p>Libreta ${esc(u.version)} está disponible. Tus notas no se tocan.</p>
+        show(`<strong>${esc(t('upd.availTitle'))}</strong>
+          <p>${esc(t('upd.availText', { version: u.version }))}</p>
           <div class="uc-row">${u.canInstall
-            ? '<button type="button" class="btn-primary" data-do="download">Descargar e instalar</button>'
-            : '<button type="button" class="btn-primary" data-do="open">Abrir página de descargas</button>'}
-            <button type="button" data-do="skip">Ahora no</button></div>`, (what) => {
+            ? `<button type="button" class="btn-primary" data-do="download">${esc(t('upd.install'))}</button>`
+            : `<button type="button" class="btn-primary" data-do="open">${esc(t('upd.openPage'))}</button>`}
+            <button type="button" data-do="skip">${esc(t('upd.skip'))}</button></div>`, (what) => {
           if (what === 'download') api.updates.download();
           else if (what === 'open') { api.updates.openReleases(); hide(); }
           else { store.set(SKIP_KEY, u.version); hide(); }
@@ -42,34 +43,34 @@ export function initUpdates({ flush, toast }) {
         break;
       }
       case 'downloading':
-        show(`<strong>Descargando la actualización…</strong>
+        show(`<strong>${esc(t('upd.downloading'))}</strong>
           <div class="uc-bar" role="progressbar" aria-valuemin="0" aria-valuemax="100" aria-valuenow="${u.percent}"><i style="width:${u.percent}%"></i></div>
           <p>${u.percent} %</p>`, () => {});
         break;
       case 'ready':
-        show(`<strong>Lista para instalar</strong>
-          <p>Libreta ${esc(u.version)} se instala al reiniciar. Tus notas se guardan antes.</p>
-          <div class="uc-row"><button type="button" class="btn-primary" data-do="install">Reiniciar y actualizar</button>
-          <button type="button" data-do="later">Al cerrar la app</button></div>`, async (what) => {
+        show(`<strong>${esc(t('upd.readyTitle'))}</strong>
+          <p>${esc(t('upd.readyText', { version: u.version }))}</p>
+          <div class="uc-row"><button type="button" class="btn-primary" data-do="install">${esc(t('upd.restart'))}</button>
+          <button type="button" data-do="later">${esc(t('upd.onQuit'))}</button></div>`, async (what) => {
           if (what === 'install') { await flush(); api.updates.install(); }
           else hide();
         });
         break;
       case 'error':
-        show(`<strong>No se pudo actualizar</strong>
-          <p>Puedes descargar la versión nueva a mano desde la página de versiones.</p>
-          <div class="uc-row"><button type="button" class="btn-primary" data-do="open">Abrir página de descargas</button>
-          <button type="button" data-do="close">Cerrar</button></div>`, (what) => {
+        show(`<strong>${esc(t('upd.errorTitle'))}</strong>
+          <p>${esc(t('upd.errorText'))}</p>
+          <div class="uc-row"><button type="button" class="btn-primary" data-do="open">${esc(t('upd.openPage'))}</button>
+          <button type="button" data-do="close">${esc(t('upd.close'))}</button></div>`, (what) => {
           if (what === 'open') api.updates.openReleases();
           hide();
         });
         break;
       case 'none':
         hide();
-        toast(`Ya tienes la última versión (${u.current}).`);
+        toast(t('upd.none', { current: u.current }));
         break;
       case 'dev':
-        toast('Las actualizaciones funcionan en la versión instalada, no en modo desarrollo.');
+        toast(t('upd.dev'));
         break;
     }
   });
