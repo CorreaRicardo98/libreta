@@ -1,4 +1,4 @@
-const { app, BrowserWindow, Menu, ipcMain, dialog, shell, protocol, net, session, nativeTheme } = require('electron');
+const { app, BrowserWindow, Menu, ipcMain, dialog, shell, protocol, net, session, nativeTheme, screen } = require('electron');
 const path = require('node:path');
 const fs = require('node:fs');
 const { pathToFileURL } = require('node:url');
@@ -7,6 +7,7 @@ const importer = require('./importer');
 const { createUpdater } = require('./updater');
 const prefsLib = require('./prefs');
 const i18n = require('./i18n');
+const windowState = require('./windowstate');
 
 const DEV = !!process.env.LIBRETA_DEV;
 let win = null;
@@ -61,9 +62,17 @@ function watchVault() {
   } catch { watcher = null; }
 }
 
+function saveWindowState() {
+  if (!win || win.isDestroyed()) return;
+  const maximized = win.isMaximized() || win.isFullScreen();
+  const b = win.getNormalBounds(); // tamaño normal aunque esté maximizada
+  writeSettings({ ...readSettings(), window: { ...b, maximized } });
+}
+
 function createWindow() {
+  const { maximized, ...frame } = windowState.restore(readSettings().window, screen.getAllDisplays());
   win = new BrowserWindow({
-    width: 1180, height: 760, minWidth: 720, minHeight: 480,
+    ...frame, minWidth: windowState.MIN.width, minHeight: windowState.MIN.height,
     title: 'Libreta',
     backgroundColor: nativeTheme.shouldUseDarkColors ? '#12161e' : '#f6f7f9',
     icon: path.join(__dirname, '..', 'build', 'icon.png'),
@@ -72,6 +81,8 @@ function createWindow() {
       contextIsolation: true, nodeIntegration: false, sandbox: true,
     },
   });
+  if (maximized) win.maximize();
+  win.on('close', saveWindowState);
   // enlaces externos al navegador, nunca dentro de la app
   win.webContents.setWindowOpenHandler(({ url }) => {
     if (/^https?:|^mailto:/.test(url)) shell.openExternal(url);
