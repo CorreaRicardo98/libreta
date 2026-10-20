@@ -29,6 +29,7 @@ class Store {
     this.foldersFile = path.join(dir, 'folders.json');
     this.smartFile = path.join(dir, 'smart.json');
     this.histDir = path.join(dir, 'history');
+    this.tplDir = path.join(dir, 'templates');
     fs.mkdirSync(this.notesDir, { recursive: true });
     fs.mkdirSync(this.attDir, { recursive: true });
     if (!fs.existsSync(this.foldersFile)) {
@@ -441,6 +442,47 @@ class Store {
     };
     this._write(n);
     return this._meta(n);
+  }
+
+  // ---- plantillas de nota: templates/<id>.json = { id, name, html, created }. Se crean al guardar la primera.
+  listTemplates() {
+    let files;
+    try {
+      files = fs.readdirSync(this.tplDir).filter((f) => f.endsWith('.json'));
+    } catch {
+      return [];
+    }
+    const out = [];
+    for (const f of files) {
+      try {
+        const t = JSON.parse(fs.readFileSync(path.join(this.tplDir, f), 'utf8'));
+        if (/^[a-z0-9-]+$/i.test(t.id || '') && typeof t.name === 'string' && typeof t.html === 'string') out.push({ id: t.id, name: t.name, html: t.html, created: t.created || 0 });
+      } catch {
+        /* archivo ajeno o dañado: se ignora */
+      }
+    }
+    return out.sort((a, b) => a.created - b.created || a.name.localeCompare(b.name));
+  }
+  /** Guarda una plantilla. Si ya hay una con el mismo nombre, la actualiza en lugar de duplicarla. */
+  saveTemplate({ name, html }) {
+    const nm = String(name ?? '')
+      .trim()
+      .slice(0, 60);
+    if (!nm || typeof html !== 'string') return null;
+    const same = this.listTemplates().find((t) => t.name.toLowerCase() === nm.toLowerCase());
+    const tpl = { id: same?.id || newId(), name: nm, html, created: same?.created || Date.now() };
+    fs.mkdirSync(this.tplDir, { recursive: true });
+    this._writeAtomic(path.join(this.tplDir, `${tpl.id}.json`), JSON.stringify(tpl));
+    return tpl;
+  }
+  deleteTemplate(id) {
+    if (!/^[a-z0-9-]+$/i.test(String(id))) return false;
+    try {
+      fs.unlinkSync(path.join(this.tplDir, `${id}.json`));
+      return true;
+    } catch {
+      return false;
+    }
   }
 
   trash(id) {

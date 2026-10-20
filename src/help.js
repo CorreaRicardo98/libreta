@@ -8,6 +8,7 @@ const REPO = 'https://github.com/CorreaRicardo98/libreta';
 const CARDS = [
   ['folders', 'new-folder'],
   ['smart', 'smart'],
+  ['templates', 'templates'],
   ['insert'],
   ['links'],
   ['search', 'search'],

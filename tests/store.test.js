@@ -124,3 +124,48 @@ test('cambiar contraseña borra el historial cifrado con la clave anterior', () 
   s.changePassword(n.id, 'pw', 'nuevo');
   assert.equal(s.listVersions(n.id).length, 0);
 });
+
+test('plantillas: guardar, listar, actualizar por nombre y borrar', () => {
+  const dir = tmp();
+  const s = new Store(dir);
+  assert.deepEqual(s.listTemplates(), [], 'sin carpeta templates no hay plantillas');
+  const a = s.saveTemplate({ name: ' Reunión ', html: '<h1>Reunión</h1><p>Asistentes</p>' });
+  s.saveTemplate({ name: 'Diario', html: '<h1>Diario</h1>' });
+  assert.deepEqual(
+    s
+      .listTemplates()
+      .map((t) => t.name)
+      .sort(),
+    ['Diario', 'Reunión'],
+  );
+  const again = s.saveTemplate({ name: 'reunión', html: '<h1>Reunión v2</h1>' });
+  assert.equal(again.id, a.id, 'mismo nombre actualiza, no duplica');
+  assert.equal(s.listTemplates().length, 2);
+  assert.equal(s.listTemplates().find((t) => t.id === a.id).html, '<h1>Reunión v2</h1>');
+  assert.ok(fs.existsSync(path.join(dir, 'templates', `${a.id}.json`)), 'vive en la bóveda para sincronizarse');
+  assert.equal(s.deleteTemplate(a.id), true);
+  assert.equal(s.listTemplates().length, 1);
+  assert.equal(s.deleteTemplate('../notes/x'), false, 'id inválido no toca nada');
+});
+
+test('plantillas: rechaza nombre vacío o contenido no válido y ignora archivos dañados', () => {
+  const dir = tmp();
+  const s = new Store(dir);
+  assert.equal(s.saveTemplate({ name: '   ', html: '<p>x</p>' }), null);
+  assert.equal(s.saveTemplate({ name: 'A', html: 5 }), null);
+  s.saveTemplate({ name: 'Buena', html: '<p>ok</p>' });
+  fs.writeFileSync(path.join(dir, 'templates', 'roto.json'), '{no es json');
+  fs.writeFileSync(path.join(dir, 'templates', 'otro.json'), JSON.stringify({ id: 'otro', name: 7 }));
+  assert.deepEqual(
+    s.listTemplates().map((t) => t.name),
+    ['Buena'],
+  );
+});
+
+test('plantillas: una bóveda sin la carpeta templates sigue abriendo igual (compatible hacia atrás)', () => {
+  const dir = tmp();
+  const s = new Store(dir);
+  const n = s.create();
+  assert.ok(n.id);
+  assert.equal(fs.existsSync(path.join(dir, 'templates')), false, 'no se crea hasta guardar una plantilla');
+});

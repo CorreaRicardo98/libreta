@@ -55,6 +55,7 @@ Todo vive en una carpeta («bóveda») que cualquiera puede sincronizar con Sync
 notes/<id>.json     una nota: metadatos + HTML (o contenido cifrado si está bloqueada)
 folders.json        carpetas (con parentId)
 smart.json          carpetas inteligentes
+templates/<id>.json plantillas de nota propias (se crea al guardar la primera)
 history/<id>/*.json versiones anteriores de cada nota
 attachments/*       imágenes y archivos adjuntos
 ```
