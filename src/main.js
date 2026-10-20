@@ -2,6 +2,9 @@ import { $, esc, showMenu, promptDialog, confirmDialog, passwordDialog, smartDia
 import { search, matches } from './search.js';
 import { helpDialog } from './help.js';
 import { initUpdates } from './updates.js';
+import { applyPrefs, settingsDialog } from './settings.js';
+
+applyPrefs(window.libreta.prefs.initial); // antes del primer dibujo, para que no parpadee
 import { createEditor, snapshot, countWords, insertFiles } from './editor.js';
 import { drawDialog, scanDialog } from './draw.js';
 import { htmlToMarkdown } from './md.js';
@@ -766,10 +769,8 @@ api.on('menu', async (cmd) => {
     case 'focus-search': app.dataset.pane = 'list'; $('#search').focus(); $('#search').select(); break;
     case 'view-list': setView('list'); break;
     case 'view-gallery': setView('gallery'); break;
-    case 'change-vault':
-      await flushSave();
-      if (await api.vault.change()) { S.currentId = null; closeNote(); await reload(); toast('Carpeta de notas cambiada'); }
-      break;
+    case 'change-vault': changeVault(); break;
+    case 'settings': openSettings(); break;
   }
 });
 
@@ -850,6 +851,23 @@ async function openHistory() {
   toast('Versión restaurada. La anterior quedó en el historial.');
 }
 
+// ---------------------------------------------------------------- ajustes
+async function changeVault() {
+  await flushSave();
+  if (await api.vault.change()) { S.currentId = null; closeNote(); await reload(); toast('Carpeta de notas cambiada'); }
+}
+
+async function openSettings() {
+  const [prefs, vault] = await Promise.all([api.prefs.get(), api.vault.info()]);
+  await settingsDialog({
+    prefs, api, vault: vault.dir, view: S.view, sort: S.sort,
+    onView: setView,
+    onSort: (v) => { S.sort = v; store.set('sort', v); renderList(); },
+    onChangeVault: changeVault,
+  });
+}
+$('#btn-settings').addEventListener('click', openSettings);
+
 // ---------------------------------------------------------------- ayuda
 async function openHelp(tab = 'start') {
   const info = await api.appInfo().catch(() => ({}));
@@ -868,6 +886,7 @@ async function openHelp(tab = 'start') {
     case 'smart': await editSmart(null); break;
     case 'import': await importNotes(); break;
     case 'open-vault': await api.vault.open(); break;
+    case 'settings': await openSettings(); break;
     case 'search': app.dataset.pane = 'list'; $('#search').focus(); break;
   }
 }
@@ -931,6 +950,7 @@ const WELCOME = `<h1>Bienvenida a Libreta</h1>
 <li><p><strong>Menú «…»</strong> (arriba a la derecha): historial de versiones, compartir, exportar y mover.</p></li>
 <li><p><strong>Buscador</strong>: ignora acentos y perdona errores. Prueba <code>tiene:imagen</code> o <code>tag:ideas</code>.</p></li>
 <li><p><strong>Archivo → Importar notas</strong>: trae tus notas de Joplin, Obsidian, Evernote y más.</p></li>
+<li><p><strong>Ajustes</strong> (<code>Ctrl</code> + <code>,</code>): tema claro u oscuro, color, tipografía y tamaño del texto.</p></li>
 <li><p><strong>Ayuda → Guía rápida</strong> (o la tecla <code>F1</code>): todo esto con más detalle.</p></li>
 </ul>
 <p>Escribe etiquetas como #ideas o #pendientes y aparecerán a la izquierda para filtrar.</p>`;

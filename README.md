@@ -17,6 +17,13 @@ Para Windows y Linux. Sin cuentas, sin nube, sin rastreo.
 
 ![Libreta en modo claro, con una nota abierta, la lista y las carpetas](docs/screenshots/editor-claro.png)
 
+<details open>
+<summary><b>Míralo en acción</b>: nota nueva, enlace con <code>[[</code>, búsqueda con filtro y cambio de tema</summary>
+
+![Demostración de Libreta](docs/demo.gif)
+
+</details>
+
 Libreta lleva a Windows y Linux la forma de trabajar de las notas de Apple —carpetas, lista, galería, listas de tareas, tablas, adjuntos, dibujo y escaneo—, con diseño propio y con tus notas guardadas como **archivos que tú controlas**.
 
 ## Instalar
@@ -57,8 +64,9 @@ Para esto Libreta consulta, cada pocas horas, la lista de versiones de GitHub. N
 - **Proteger**: **notas bloqueadas con contraseña** (AES-256-GCM).
 - **Traer lo que ya tienes**: importa desde carpetas de Markdown, texto o HTML (Joplin, Obsidian, Bear, Notion; Apple Notes exportada con una herramienta de terceros) y desde Evernote (`.enex`).
 - **Compartir y exportar**: copiar como texto o Markdown, enviar por correo, exportar a PDF, HTML o Markdown.
+- **Ajustes** (`Ctrl+,`): tema automático, claro u oscuro, seis colores de acento, letra y tamaño del texto de las notas, ancho de la página, vista y orden de la lista, carpeta de notas y actualizaciones.
 - **Guía dentro de la app**: **Ayuda → Guía rápida** (`F1`) o el botón «Guía rápida» de la barra lateral explican dónde está cada función, los filtros de búsqueda y los atajos.
-- Tema claro y oscuro según tu sistema, uso completo con teclado y ventanas angostas.
+- Uso completo con teclado y en ventanas angostas.
 
 <table>
   <tr>

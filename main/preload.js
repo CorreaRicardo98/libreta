@@ -33,6 +33,11 @@ contextBridge.exposeInMainWorld('libreta', {
     get: (id, t) => call('history:get', id, t),
     restore: (id, t) => call('history:restore', id, t),
   },
+  prefs: {
+    initial: ipcRenderer.sendSync('prefs:getSync'), // disponible al instante, antes del primer dibujo
+    get: () => call('prefs:get'),
+    set: (patch) => call('prefs:set', patch),
+  },
   updates: {
     check: () => call('update:check'),
     download: () => call('update:download'),
