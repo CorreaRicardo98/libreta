@@ -29,6 +29,11 @@ contextBridge.exposeInMainWorld('libreta', {
     removeLock: (id, pwd) => call('notes:removeLock', id, pwd),
     emptyTrash: () => call('notes:emptyTrash'),
   },
+  templates: {
+    list: () => call('templates:list'),
+    save: (t) => call('templates:save', t),
+    remove: (id) => call('templates:delete', id),
+  },
   history: {
     list: (id) => call('history:list', id),
     get: (id, t) => call('history:get', id, t),
