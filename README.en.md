@@ -11,7 +11,21 @@ For Windows and Linux. No accounts, no cloud, no tracking.
 
 </div>
 
-![Libreta in light mode](docs/screenshots/editor-claro.png)
+![Libreta in light mode, with a note, the notes list and the folders](docs/screenshots/en-editor-light.png)
+
+<details open>
+<summary><b>See it in action</b>: new note, <code>[[</code> link, filtered search and theme switch</summary>
+
+![Libreta demo](docs/demo-en.gif)
+
+</details>
+
+<table>
+  <tr>
+    <td><img src="docs/screenshots/en-gallery-dark.png" alt="Gallery view in dark mode"></td>
+    <td><img src="docs/screenshots/en-search-dark.png" alt="Search with filters in dark mode"></td>
+  </tr>
+</table>
 
 Libreta brings the workflow of Apple Notes to Windows and Linux — folders, list and gallery views, checklists, tables, attachments, drawing and document scanning — with its own design and your notes kept as **plain files you control**.
 
