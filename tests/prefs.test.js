@@ -3,8 +3,7 @@ const assert = require('node:assert/strict');
 const { DEFAULTS, sanitize, withDefaults } = require('../main/prefs');
 
 test('valores válidos se conservan', () => {
-  assert.deepEqual(sanitize({ theme: 'dark', accent: 'verde', font: 'mono', size: 19, width: 'wide' }),
-    { theme: 'dark', accent: 'verde', font: 'mono', size: 19, width: 'wide' });
+  assert.deepEqual(sanitize({ theme: 'dark', accent: 'verde', font: 'mono', size: 19, width: 'wide' }), { theme: 'dark', accent: 'verde', font: 'mono', size: 19, width: 'wide' });
 });
 
 test('valores inválidos y campos desconocidos se descartan', () => {

@@ -12,7 +12,10 @@ function sanitize(w) {
     height: Math.max(MIN.height, Math.round(w.height)),
     maximized: w.maximized === true,
   };
-  if (isNum(w.x) && isNum(w.y)) { out.x = Math.round(w.x); out.y = Math.round(w.y); }
+  if (isNum(w.x) && isNum(w.y)) {
+    out.x = Math.round(w.x);
+    out.y = Math.round(w.y);
+  }
   return out;
 }
 

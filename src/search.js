@@ -2,15 +2,25 @@
 //   tag:ideas  carpeta:trabajo  tiene:imagen|tareas|adjunto|tabla|enlace  es:fijada|bloqueada
 //   antes:2026-01-31  despues:2026-01-01  "frase exacta"  -excluir
 
-export const norm = (s) => String(s ?? '').normalize('NFD').replace(/\p{M}/gu, '').toLowerCase();
+export const norm = (s) =>
+  String(s ?? '')
+    .normalize('NFD')
+    .replace(/\p{M}/gu, '')
+    .toLowerCase();
 
 const FILTER_KEYS = {
-  tag: 'tag', etiqueta: 'tag',
-  carpeta: 'folder', folder: 'folder',
-  tiene: 'has', has: 'has',
-  es: 'is', is: 'is',
-  antes: 'before', before: 'before',
-  despues: 'after', after: 'after',
+  tag: 'tag',
+  etiqueta: 'tag',
+  carpeta: 'folder',
+  folder: 'folder',
+  tiene: 'has',
+  has: 'has',
+  es: 'is',
+  is: 'is',
+  antes: 'before',
+  before: 'before',
+  despues: 'after',
+  after: 'after',
 };
 
 export function parseQuery(q) {
@@ -76,16 +86,36 @@ function termScore(e, term) {
 }
 
 const HAS = {
-  imagen: 'images', imagenes: 'images', foto: 'images', fotos: 'images', image: 'images', images: 'images',
-  tarea: 'tasks', tareas: 'tasks', task: 'tasks', tasks: 'tasks',
-  adjunto: 'files', adjuntos: 'files', archivo: 'files', archivos: 'files', file: 'files', files: 'files', attachment: 'files', attachments: 'files',
-  tabla: 'tables', tablas: 'tables', table: 'tables', tables: 'tables',
+  imagen: 'images',
+  imagenes: 'images',
+  foto: 'images',
+  fotos: 'images',
+  image: 'images',
+  images: 'images',
+  tarea: 'tasks',
+  tareas: 'tasks',
+  task: 'tasks',
+  tasks: 'tasks',
+  adjunto: 'files',
+  adjuntos: 'files',
+  archivo: 'files',
+  archivos: 'files',
+  file: 'files',
+  files: 'files',
+  attachment: 'files',
+  attachments: 'files',
+  tabla: 'tables',
+  tablas: 'tables',
+  table: 'tables',
+  tables: 'tables',
 };
 
 function filterOk(n, [kind, val], ctx) {
   switch (kind) {
-    case 'tag': return (n.tags || []).some((t) => norm(t) === val.replace(/^#/, ''));
-    case 'folder': return norm(ctx.folderPath(n.folderId)).includes(val);
+    case 'tag':
+      return (n.tags || []).some((t) => norm(t) === val.replace(/^#/, ''));
+    case 'folder':
+      return norm(ctx.folderPath(n.folderId)).includes(val);
     case 'has':
       if (/^(enlace|enlaces|link|links)$/.test(val)) return !!n.links?.length;
       return !!(HAS[val] && n.flags?.[HAS[val]]);
@@ -93,9 +123,16 @@ function filterOk(n, [kind, val], ctx) {
       if (/^(fijada|fijadas|pinned)$/.test(val)) return !!n.pinned;
       if (/^(bloqueada|bloqueadas|locked)$/.test(val)) return !!n.locked;
       return false;
-    case 'before': { const t = Date.parse(val); return !Number.isNaN(t) && n.updated < t; }
-    case 'after': { const t = Date.parse(val); return !Number.isNaN(t) && n.updated >= t; }
-    default: return false;
+    case 'before': {
+      const t = Date.parse(val);
+      return !Number.isNaN(t) && n.updated < t;
+    }
+    case 'after': {
+      const t = Date.parse(val);
+      return !Number.isNaN(t) && n.updated >= t;
+    }
+    default:
+      return false;
   }
 }
 
@@ -141,7 +178,10 @@ function snippet(n, p) {
   const hay = norm(text);
   const needles = [...p.phrases, ...p.terms];
   let at = -1;
-  for (const t of needles) { at = hay.indexOf(t); if (at >= 0) break; }
+  for (const t of needles) {
+    at = hay.indexOf(t);
+    if (at >= 0) break;
+  }
   if (at < 0) return '';
   const from = Math.max(0, at - 40);
   return (from > 0 ? '…' : '') + text.slice(from, from + 130);

@@ -13,7 +13,11 @@ function translator(lang) {
 /** Idioma efectivo: el elegido o, si es «system», el del sistema (español si empieza por «es», si no inglés). */
 function resolveLang(choice, systemLocale) {
   if (choice === 'es' || choice === 'en') return choice;
-  return String(systemLocale || '').toLowerCase().startsWith('es') ? 'es' : 'en';
+  return String(systemLocale || '')
+    .toLowerCase()
+    .startsWith('es')
+    ? 'es'
+    : 'en';
 }
 
 module.exports = { translator, resolveLang, LANGS: Object.keys(dicts) };

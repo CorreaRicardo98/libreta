@@ -12,11 +12,15 @@ const HTML_EXT = new Set(['.html', '.htm']);
 const IMG_EXT = new Set(['.png', '.jpg', '.jpeg', '.gif', '.webp', '.svg', '.bmp']);
 const MAX_FILES = 20000;
 
-const esc = (s) => String(s).replace(/[&<>"]/g, (c) => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;' }[c]));
+const esc = (s) => String(s).replace(/[&<>"]/g, (c) => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;' })[c]);
 
 function walk(dir, out = []) {
   let entries;
-  try { entries = fs.readdirSync(dir, { withFileTypes: true }); } catch { return out; }
+  try {
+    entries = fs.readdirSync(dir, { withFileTypes: true });
+  } catch {
+    return out;
+  }
   for (const e of entries) {
     if (out.length >= MAX_FILES) break;
     if (e.name.startsWith('.')) continue;
@@ -42,7 +46,11 @@ function makeResolver(root, files) {
   for (const f of files) if (!byName.has(path.basename(f).toLowerCase())) byName.set(path.basename(f).toLowerCase(), f);
   return (fromDir, ref) => {
     let r = String(ref).split('#')[0].split('?')[0];
-    try { r = decodeURIComponent(r); } catch { /* ya estaba decodificado */ }
+    try {
+      r = decodeURIComponent(r);
+    } catch {
+      /* ya estaba decodificado */
+    }
     if (!r || /^(https?:|data:|mailto:|libreta:)/i.test(r)) return null;
     const direct = path.resolve(fromDir, r);
     if (direct.startsWith(root) && fs.existsSync(direct) && fs.statSync(direct).isFile()) return direct;
@@ -59,24 +67,34 @@ function frontMatter(text) {
     const kv = /^([\w-]+):\s*(.*)$/.exec(lines[i]);
     if (!kv) continue;
     let v = kv[2].trim();
-    if (!v) { const items = []; while (/^\s*-\s+/.test(lines[i + 1] || '')) items.push(lines[++i].replace(/^\s*-\s+/, '').trim()); v = items; }
-    else if (/^\[.*\]$/.test(v)) v = v.slice(1, -1).split(',').map((x) => x.trim());
+    if (!v) {
+      const items = [];
+      while (/^\s*-\s+/.test(lines[i + 1] || '')) items.push(lines[++i].replace(/^\s*-\s+/, '').trim());
+      v = items;
+    } else if (/^\[.*\]$/.test(v))
+      v = v
+        .slice(1, -1)
+        .split(',')
+        .map((x) => x.trim());
     meta[kv[1].toLowerCase()] = v;
   }
   return { body: text.slice(m[0].length), meta };
 }
 
-const tagList = (meta) => []
-  .concat(meta.tags || meta.tag || [])
-  .flatMap((t) => String(t).split(/[,\s]+/))
-  .map((t) => t.replace(/^#/, '').replace(/[^\p{L}\p{N}_-]/gu, ''))
-  .filter((t) => /^\p{L}/u.test(t));
+const tagList = (meta) =>
+  []
+    .concat(meta.tags || meta.tag || [])
+    .flatMap((t) => String(t).split(/[,\s]+/))
+    .map((t) => t.replace(/^#/, '').replace(/[^\p{L}\p{N}_-]/gu, ''))
+    .filter((t) => /^\p{L}/u.test(t));
 
 /** marked escribe las tareas como <input type=checkbox>; el editor espera su propio formato de lista de tareas. */
 function fixMarkup(html) {
   html = html.replace(/<ul>((?:(?!<\/ul>)[\s\S])*?<li>\s*(?:<p>)?\s*<input\b[^>]*type="checkbox"[\s\S]*?)<\/ul>/g, (_m, inner) => {
-    const items = inner.replace(/<li>\s*(?:<p>)?\s*(?:<input\b([^>]*)>)?\s*([\s\S]*?)(?:<\/p>)?\s*<\/li>/g,
-      (_i, attrs, text) => `<li data-type="taskItem" data-checked="${/\bchecked\b/.test(attrs || '')}"><div><p>${text.trim()}</p></div></li>`);
+    const items = inner.replace(
+      /<li>\s*(?:<p>)?\s*(?:<input\b([^>]*)>)?\s*([\s\S]*?)(?:<\/p>)?\s*<\/li>/g,
+      (_i, attrs, text) => `<li data-type="taskItem" data-checked="${/\bchecked\b/.test(attrs || '')}"><div><p>${text.trim()}</p></div></li>`,
+    );
     return `<ul data-type="taskList">${items}</ul>`;
   });
   // un adjunto no puede ir dentro de un párrafo
@@ -88,13 +106,21 @@ function rewriteMedia(html, dir, resolve, store) {
   html = html.replace(/<img\b[^>]*?\bsrc="([^"]+)"[^>]*>/gi, (m, src) => {
     const f = resolve(dir, src);
     if (!f) return m;
-    try { return attachFile(store, f, (/alt="([^"]*)"/i.exec(m) || [])[1]).html; } catch { return m; }
+    try {
+      return attachFile(store, f, (/alt="([^"]*)"/i.exec(m) || [])[1]).html;
+    } catch {
+      return m;
+    }
   });
   html = html.replace(/<a\b[^>]*?\bhref="([^"]+)"[^>]*>([\s\S]*?)<\/a>/gi, (m, href, inner) => {
     if (/\.(md|markdown|txt|html?)$/i.test(href.split('#')[0])) return inner; // enlace a otra nota: queda el texto
     const f = resolve(dir, href);
     if (!f) return m;
-    try { return attachFile(store, f).html; } catch { return m; }
+    try {
+      return attachFile(store, f).html;
+    } catch {
+      return m;
+    }
   });
   return html;
 }
@@ -121,24 +147,31 @@ function importFiles(store, files, root, resolve, folderOf) {
         title = String(meta.title || (h1 && h1[1]) || base);
         // Obsidian: ![[imagen.png]] -> imagen estándar
         const body = fm.body.replace(/!\[\[([^\]|]+)(?:\|[^\]]*)?\]\]/g, (_m, f) => `![${f}](${encodeURI(f)})`);
-        html = ext === '.txt'
-          ? body.split(/\r?\n\r?\n/).map((p) => `<p>${esc(p).replace(/\n/g, '<br>')}</p>`).join('')
-          : marked.parse(body, { gfm: true, breaks: false });
+        html =
+          ext === '.txt'
+            ? body
+                .split(/\r?\n\r?\n/)
+                .map((p) => `<p>${esc(p).replace(/\n/g, '<br>')}</p>`)
+                .join('')
+            : marked.parse(body, { gfm: true, breaks: false });
       } else {
         const t = /<title[^>]*>([\s\S]*?)<\/title>/i.exec(raw);
         if (t && t[1].trim()) title = t[1].trim();
-        html = (/<body[^>]*>([\s\S]*)<\/body>/i.exec(raw) || [null, raw])[1]
-          .replace(/<(script|style)\b[\s\S]*?<\/\1>/gi, '');
+        html = (/<body[^>]*>([\s\S]*)<\/body>/i.exec(raw) || [null, raw])[1].replace(/<(script|style)\b[\s\S]*?<\/\1>/gi, '');
       }
       html = fixMarkup(rewriteMedia(html, path.dirname(file), resolve, store));
       const tags = tagList(meta);
       items.push({
-        title, html, tags,
+        title,
+        html,
+        tags,
         created: Math.round(st.birthtimeMs && st.birthtimeMs > 0 ? Math.min(st.birthtimeMs, st.mtimeMs) : st.mtimeMs),
         updated: Math.round(st.mtimeMs),
         folder: folderOf(file),
       });
-    } catch (e) { skipped.push(`${path.basename(file)}: ${e.message}`); }
+    } catch (e) {
+      skipped.push(`${path.basename(file)}: ${e.message}`);
+    }
   }
   return { items, skipped };
 }
@@ -172,10 +205,18 @@ const enexDate = (s) => {
   const m = /^(\d{4})(\d{2})(\d{2})T(\d{2})(\d{2})(\d{2})Z$/.exec(String(s || '').trim());
   return m ? Date.UTC(+m[1], +m[2] - 1, +m[3], +m[4], +m[5], +m[6]) : Date.now();
 };
-const xmlText = (s) => String(s)
-  .replace(/<!\[CDATA\[([\s\S]*?)\]\]>/g, '$1')
-  .replace(/&lt;/g, '<').replace(/&gt;/g, '>').replace(/&quot;/g, '"').replace(/&apos;/g, "'").replace(/&amp;/g, '&');
-const tag = (xml, name) => { const m = new RegExp(`<${name}\\b[^>]*>([\\s\\S]*?)</${name}>`, 'i').exec(xml); return m ? m[1] : ''; };
+const xmlText = (s) =>
+  String(s)
+    .replace(/<!\[CDATA\[([\s\S]*?)\]\]>/g, '$1')
+    .replace(/&lt;/g, '<')
+    .replace(/&gt;/g, '>')
+    .replace(/&quot;/g, '"')
+    .replace(/&apos;/g, "'")
+    .replace(/&amp;/g, '&');
+const tag = (xml, name) => {
+  const m = new RegExp(`<${name}\\b[^>]*>([\\s\\S]*?)</${name}>`, 'i').exec(xml);
+  return m ? m[1] : '';
+};
 
 function importEnex(store, file) {
   const xml = fs.readFileSync(file, 'utf8');
@@ -198,9 +239,11 @@ function importEnex(store, file) {
         media.set(crypto.createHash('md5').update(bytes).digest('hex'), { url, mime, fname, size: bytes.length });
       }
       let body = xmlText(tag(note, 'content'))
-        .replace(/<\?xml[^>]*\?>/gi, '').replace(/<!DOCTYPE[^>]*>/gi, '')
+        .replace(/<\?xml[^>]*\?>/gi, '')
+        .replace(/<!DOCTYPE[^>]*>/gi, '')
         .replace(/<\/?en-note[^>]*>/gi, '')
-        .replace(/<en-todo\s+checked="true"\s*\/?>/gi, '☑ ').replace(/<en-todo[^>]*\/?>/gi, '☐ ')
+        .replace(/<en-todo\s+checked="true"\s*\/?>/gi, '☑ ')
+        .replace(/<en-todo[^>]*\/?>/gi, '☐ ')
         .replace(/<en-media\b([^>]*?)\/?>(\s*<\/en-media>)?/gi, (_m, attrs) => {
           const hash = (/hash="([^"]+)"/i.exec(attrs) || [])[1];
           const r = media.get(hash);
@@ -210,9 +253,16 @@ function importEnex(store, file) {
             : `<div data-type="attachment" data-src="${r.url}" data-name="${esc(r.fname)}" data-size="${r.size}"></div>`;
         });
       const tags = [...note.matchAll(/<tag>([\s\S]*?)<\/tag>/g)]
-        .map((t) => xmlText(t[1]).trim().replace(/[^\p{L}\p{N}_-]/gu, '')).filter((t) => /^\p{L}/u.test(t));
+        .map((t) =>
+          xmlText(t[1])
+            .trim()
+            .replace(/[^\p{L}\p{N}_-]/gu, ''),
+        )
+        .filter((t) => /^\p{L}/u.test(t));
       items.push({ title, html: body, tags, created: enexDate(tag(note, 'created')), updated: enexDate(tag(note, 'updated')), folder });
-    } catch (e) { skipped.push(e.message); }
+    } catch (e) {
+      skipped.push(e.message);
+    }
   }
   return { items, skipped };
 }

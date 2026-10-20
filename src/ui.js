@@ -5,7 +5,7 @@ import { t as tr, locale } from './i18n.js';
 export const $ = (sel, root = document) => root.querySelector(sel);
 
 export function esc(s) {
-  return String(s ?? '').replace(/[&<>"']/g, (c) => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;' }[c]));
+  return String(s ?? '').replace(/[&<>"']/g, (c) => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;' })[c]);
 }
 
 const layer = () => document.getElementById('menu-layer');
@@ -18,7 +18,10 @@ export function showMenu(x, y, items) {
   m.className = 'menu';
   m.setAttribute('role', 'menu');
   for (const it of items) {
-    if (it.sep) { m.append(document.createElement('hr')); continue; }
+    if (it.sep) {
+      m.append(document.createElement('hr'));
+      continue;
+    }
     if (it.header) {
       const h = document.createElement('div');
       h.className = 'mh';
@@ -32,7 +35,10 @@ export function showMenu(x, y, items) {
     if (it.checked !== undefined) b.setAttribute('aria-checked', String(!!it.checked));
     if (it.danger) b.className = 'danger';
     b.textContent = it.label;
-    b.addEventListener('click', () => { hideMenu(); it.onClick?.(); });
+    b.addEventListener('click', () => {
+      hideMenu();
+      it.onClick?.();
+    });
     m.append(b);
   }
   layer().append(m);
@@ -41,9 +47,14 @@ export function showMenu(x, y, items) {
   m.style.top = `${Math.max(8, Math.min(y, innerHeight - r.height - 8))}px`;
   m.querySelector('button')?.focus();
 
-  const onDown = (e) => { if (!m.contains(e.target)) hideMenu(); };
+  const onDown = (e) => {
+    if (!m.contains(e.target)) hideMenu();
+  };
   const onKey = (e) => {
-    if (e.key === 'Escape') { hideMenu(); return; }
+    if (e.key === 'Escape') {
+      hideMenu();
+      return;
+    }
     if (e.key === 'ArrowDown' || e.key === 'ArrowUp') {
       e.preventDefault();
       const bs = [...m.querySelectorAll('button')];
@@ -63,7 +74,9 @@ export function showMenu(x, y, items) {
   };
 }
 
-export function hideMenu() { closeMenu?.(); }
+export function hideMenu() {
+  closeMenu?.();
+}
 
 export function dialog(build) {
   return new Promise((resolve) => {
@@ -74,10 +87,21 @@ export function dialog(build) {
     box.setAttribute('role', 'dialog');
     box.setAttribute('aria-modal', 'true');
     back.append(box);
-    const done = (v) => { back.remove(); document.removeEventListener('keydown', onKey, true); resolve(v); };
-    const onKey = (e) => { if (e.key === 'Escape') { e.stopPropagation(); done(null); } };
+    const done = (v) => {
+      back.remove();
+      document.removeEventListener('keydown', onKey, true);
+      resolve(v);
+    };
+    const onKey = (e) => {
+      if (e.key === 'Escape') {
+        e.stopPropagation();
+        done(null);
+      }
+    };
     document.addEventListener('keydown', onKey, true);
-    back.addEventListener('pointerdown', (e) => { if (e.target === back) done(null); });
+    back.addEventListener('pointerdown', (e) => {
+      if (e.target === back) done(null);
+    });
     build(box, done);
     document.body.append(back);
   });
@@ -90,9 +114,15 @@ export function promptDialog({ title, value = '', placeholder = '', ok = tr('ui.
     box.innerHTML = `<h2>${esc(title)}</h2><input type="text" placeholder="${esc(placeholder)}" value="${esc(value)}" aria-label="${esc(title)}">
       <div class="row">${cancelBtn()}<button type="submit" class="btn-primary">${esc(ok)}</button></div>`;
     const input = box.querySelector('input');
-    box.addEventListener('submit', (e) => { e.preventDefault(); done(input.value.trim()); });
+    box.addEventListener('submit', (e) => {
+      e.preventDefault();
+      done(input.value.trim());
+    });
     box.querySelector('[data-no]').addEventListener('click', () => done(null));
-    setTimeout(() => { input.focus(); input.select(); });
+    setTimeout(() => {
+      input.focus();
+      input.select();
+    });
   });
 }
 
@@ -100,7 +130,10 @@ export function confirmDialog({ title, text = '', ok = tr('ui.accept') }) {
   return dialog((box, done) => {
     box.innerHTML = `<h2>${esc(title)}</h2><p class="muted" style="margin:0">${esc(text)}</p>
       <div class="row">${cancelBtn()}<button type="submit" class="btn-primary">${esc(ok)}</button></div>`;
-    box.addEventListener('submit', (e) => { e.preventDefault(); done(true); });
+    box.addEventListener('submit', (e) => {
+      e.preventDefault();
+      done(true);
+    });
     box.querySelector('[data-no]').addEventListener('click', () => done(false));
     setTimeout(() => box.querySelector('.btn-primary').focus());
   }).then((v) => !!v);
@@ -118,8 +151,14 @@ export function passwordDialog({ title, text = '', confirm = false, ok = tr('ui.
     const err = box.querySelector('.form-error');
     box.addEventListener('submit', (e) => {
       e.preventDefault();
-      if (!a.value) { err.textContent = tr('pw.empty'); return; }
-      if (confirm && a.value !== b.value) { err.textContent = tr('pw.mismatch'); return; }
+      if (!a.value) {
+        err.textContent = tr('pw.empty');
+        return;
+      }
+      if (confirm && a.value !== b.value) {
+        err.textContent = tr('pw.mismatch');
+        return;
+      }
       done(a.value);
     });
     box.querySelector('[data-no]').addEventListener('click', () => done(null));
@@ -130,7 +169,8 @@ export function passwordDialog({ title, text = '', confirm = false, ok = tr('ui.
 /** Cambio de contraseña: actual + nueva dos veces. Resuelve con { current, next } o null. */
 export function changePasswordDialog() {
   return dialog((box, done) => {
-    const field = (name, key, margin) => `<input type="password" name="${name}" placeholder="${esc(tr(key))}" aria-label="${esc(tr(key))}" autocomplete="off"${margin ? ' style="margin-top:8px"' : ''}>`;
+    const field = (name, key, margin) =>
+      `<input type="password" name="${name}" placeholder="${esc(tr(key))}" aria-label="${esc(tr(key))}" autocomplete="off"${margin ? ' style="margin-top:8px"' : ''}>`;
     box.innerHTML = `<h2>${esc(tr('lock.changeTitle'))}</h2><p class="muted" style="margin:0 0 12px">${esc(tr('lock.changeText'))}</p>
       ${field('cur', 'lock.currentPh')}${field('p1', 'lock.newPh', true)}${field('p2', 'pw.repeat', true)}
       <p class="form-error" role="alert"></p>
@@ -139,8 +179,14 @@ export function changePasswordDialog() {
     const err = box.querySelector('.form-error');
     box.addEventListener('submit', (e) => {
       e.preventDefault();
-      if (!cur.value || !a.value) { err.textContent = tr('pw.empty'); return; }
-      if (a.value !== b.value) { err.textContent = tr('pw.mismatch'); return; }
+      if (!cur.value || !a.value) {
+        err.textContent = tr('pw.empty');
+        return;
+      }
+      if (a.value !== b.value) {
+        err.textContent = tr('pw.mismatch');
+        return;
+      }
       done({ current: cur.value, next: a.value });
     });
     box.querySelector('[data-no]').addEventListener('click', () => done(null));
@@ -170,13 +216,28 @@ export function smartDialog({ folders, value }) {
     box.addEventListener('submit', (e) => {
       e.preventDefault();
       const rules = {
-        tasks: f('tasks').checked, images: f('images').checked, files: f('files').checked, tables: f('tables').checked, pinned: f('pinned').checked,
-        tags: f('tags').value.split(/[\s,#]+/).map((w) => w.trim().toLowerCase()).filter(Boolean),
-        text: f('text').value.trim(), query: f('query').value.trim(), folderId: f('folderId').value,
+        tasks: f('tasks').checked,
+        images: f('images').checked,
+        files: f('files').checked,
+        tables: f('tables').checked,
+        pinned: f('pinned').checked,
+        tags: f('tags')
+          .value.split(/[\s,#]+/)
+          .map((w) => w.trim().toLowerCase())
+          .filter(Boolean),
+        text: f('text').value.trim(),
+        query: f('query').value.trim(),
+        folderId: f('folderId').value,
       };
       const any = rules.tasks || rules.images || rules.files || rules.tables || rules.pinned || rules.tags.length || rules.text || rules.query || rules.folderId;
-      if (!f('name').value.trim()) { box.querySelector('.form-error').textContent = tr('smartdlg.errName'); return; }
-      if (!any) { box.querySelector('.form-error').textContent = tr('smartdlg.errCond'); return; }
+      if (!f('name').value.trim()) {
+        box.querySelector('.form-error').textContent = tr('smartdlg.errName');
+        return;
+      }
+      if (!any) {
+        box.querySelector('.form-error').textContent = tr('smartdlg.errCond');
+        return;
+      }
       done({ id: value?.id, name: f('name').value.trim(), rules });
     });
     box.querySelector('[data-no]').addEventListener('click', () => done(null));
@@ -229,7 +290,10 @@ export function historyDialog({ versions, load, fmt }) {
       b.addEventListener('click', () => show(v.t));
       list.append(b);
     }
-    box.addEventListener('submit', (e) => { e.preventDefault(); done(cur); });
+    box.addEventListener('submit', (e) => {
+      e.preventDefault();
+      done(cur);
+    });
     box.querySelector('[data-no]').addEventListener('click', () => done(null));
     show(cur);
     setTimeout(() => list.querySelector('button').focus());
@@ -247,7 +311,11 @@ export function toast(msg) {
 
 // ---- fechas: el idioma sale de la interfaz (se crean al usarlas, porque el idioma se fija al arrancar)
 const DAY = 864e5;
-const startOfDay = (t) => { const d = new Date(t); d.setHours(0, 0, 0, 0); return d.getTime(); };
+const startOfDay = (t) => {
+  const d = new Date(t);
+  d.setHours(0, 0, 0, 0);
+  return d.getTime();
+};
 const formatters = new Map();
 function fmt(opts) {
   const key = `${locale()}|${JSON.stringify(opts)}`;

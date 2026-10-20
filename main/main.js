@@ -15,14 +15,16 @@ let store = null;
 let watcher = null;
 let updater = null;
 
-protocol.registerSchemesAsPrivileged([
-  { scheme: 'libreta', privileges: { standard: true, secure: true, supportFetchAPI: true, stream: true } },
-]);
+protocol.registerSchemesAsPrivileged([{ scheme: 'libreta', privileges: { standard: true, secure: true, supportFetchAPI: true, stream: true } }]);
 
 // ---- ajustes (ubicación de la carpeta de notas)
 const settingsFile = () => path.join(app.getPath('userData'), 'settings.json');
 function readSettings() {
-  try { return JSON.parse(fs.readFileSync(settingsFile(), 'utf8')); } catch { return {}; }
+  try {
+    return JSON.parse(fs.readFileSync(settingsFile(), 'utf8'));
+  } catch {
+    return {};
+  }
 }
 function writeSettings(s) {
   fs.mkdirSync(path.dirname(settingsFile()), { recursive: true });
@@ -37,7 +39,9 @@ const getPrefs = () => {
   return { ...p, autoUpdate: autoUpdates(), lang: i18n.resolveLang(p.language, app.getLocale()) };
 };
 const T = (key, vars) => i18n.translator(getPrefs().lang)(key, vars);
-const applyTheme = () => { nativeTheme.themeSource = getPrefs().theme; };
+const applyTheme = () => {
+  nativeTheme.themeSource = getPrefs().theme;
+};
 function setPrefs(patch) {
   const settings = readSettings();
   const next = { ...settings, prefs: { ...(settings.prefs || {}), ...prefsLib.sanitize(patch) } };
@@ -59,7 +63,9 @@ function watchVault() {
       clearTimeout(t);
       t = setTimeout(() => win?.webContents.send('notes:external-change'), 400);
     });
-  } catch { watcher = null; }
+  } catch {
+    watcher = null;
+  }
 }
 
 function saveWindowState() {
@@ -72,13 +78,17 @@ function saveWindowState() {
 function createWindow() {
   const { maximized, ...frame } = windowState.restore(readSettings().window, screen.getAllDisplays());
   win = new BrowserWindow({
-    ...frame, minWidth: windowState.MIN.width, minHeight: windowState.MIN.height,
+    ...frame,
+    minWidth: windowState.MIN.width,
+    minHeight: windowState.MIN.height,
     title: 'Libreta',
     backgroundColor: nativeTheme.shouldUseDarkColors ? '#12161e' : '#f6f7f9',
     icon: path.join(__dirname, '..', 'build', 'icon.png'),
     webPreferences: {
       preload: path.join(__dirname, 'preload.js'),
-      contextIsolation: true, nodeIntegration: false, sandbox: true,
+      contextIsolation: true,
+      nodeIntegration: false,
+      sandbox: true,
     },
   });
   if (maximized) win.maximize();
@@ -101,64 +111,70 @@ function createWindow() {
 function buildMenu() {
   const send = (cmd) => () => win?.webContents.send('menu', cmd);
   const mac = process.platform === 'darwin';
-  Menu.setApplicationMenu(Menu.buildFromTemplate([
-    ...(mac ? [{ role: 'appMenu' }] : []),
-    {
-      label: T('menu.file'),
-      submenu: [
-        { label: T('note.newDefault'), accelerator: 'CmdOrCtrl+N', click: send('new-note') },
-        { label: T('folder.newTitle'), accelerator: 'CmdOrCtrl+Shift+N', click: send('new-folder') },
-        { type: 'separator' },
-        { label: T('folder.importMenu'), click: send('import') },
-        { label: T('menu.exportPdf'), click: send('export-pdf') },
-        { label: T('menu.exportHtml'), click: send('export-html') },
-        { label: T('menu.exportMd'), click: send('export-md') },
-        { type: 'separator' },
-        { label: T('menu.settings'), accelerator: 'CmdOrCtrl+,', click: send('settings') },
-        { label: T('menu.openVault'), click: () => shell.openPath(store.dir) },
-        { label: T('menu.changeVault'), click: send('change-vault') },
-        { type: 'separator' },
-        mac ? { role: 'close' } : { role: 'quit', label: T('menu.quit') },
-      ],
-    },
-    {
-      label: T('menu.edit'),
-      submenu: [
-        { role: 'undo', label: T('menu.undo') }, { role: 'redo', label: T('menu.redo') },
-        { type: 'separator' },
-        { role: 'cut', label: T('menu.cut') }, { role: 'copy', label: T('menu.copy') },
-        { role: 'paste', label: T('menu.paste') }, { role: 'selectAll', label: T('menu.selectAll') },
-        { type: 'separator' },
-        { label: T('menu.search'), accelerator: 'CmdOrCtrl+F', click: send('focus-search') },
-      ],
-    },
-    {
-      label: T('menu.help'),
-      submenu: [
-        { label: T('side.help'), accelerator: 'F1', click: send('help') },
-        { label: T('menu.shortcuts'), click: send('help-keys') },
-        { type: 'separator' },
-        { label: T('menu.checkUpdates'), click: () => updater?.check({ manual: true }) },
-        { label: T('set.auto'), type: 'checkbox', checked: autoUpdates(), click: (item) => writeSettings({ ...readSettings(), autoUpdate: item.checked }) },
-        { type: 'separator' },
-        { label: T('menu.report'), click: () => shell.openExternal('https://github.com/CorreaRicardo98/libreta/issues/new/choose') },
-        { label: T('help.code'), click: () => shell.openExternal('https://github.com/CorreaRicardo98/libreta') },
-      ],
-    },
-    {
-      label: T('menu.view'),
-      submenu: [
-        { label: T('list.asList'), accelerator: 'CmdOrCtrl+1', click: send('view-list') },
-        { label: T('list.asGallery'), accelerator: 'CmdOrCtrl+2', click: send('view-gallery') },
-        { type: 'separator' },
-        { role: 'zoomIn', label: T('menu.zoomIn') }, { role: 'zoomOut', label: T('menu.zoomOut') },
-        { role: 'resetZoom', label: T('menu.resetZoom') },
-        { type: 'separator' },
-        { role: 'togglefullscreen', label: T('menu.fullscreen') },
-        ...(DEV ? [{ role: 'toggleDevTools' }] : []),
-      ],
-    },
-  ]));
+  Menu.setApplicationMenu(
+    Menu.buildFromTemplate([
+      ...(mac ? [{ role: 'appMenu' }] : []),
+      {
+        label: T('menu.file'),
+        submenu: [
+          { label: T('note.newDefault'), accelerator: 'CmdOrCtrl+N', click: send('new-note') },
+          { label: T('folder.newTitle'), accelerator: 'CmdOrCtrl+Shift+N', click: send('new-folder') },
+          { type: 'separator' },
+          { label: T('folder.importMenu'), click: send('import') },
+          { label: T('menu.exportPdf'), click: send('export-pdf') },
+          { label: T('menu.exportHtml'), click: send('export-html') },
+          { label: T('menu.exportMd'), click: send('export-md') },
+          { type: 'separator' },
+          { label: T('menu.settings'), accelerator: 'CmdOrCtrl+,', click: send('settings') },
+          { label: T('menu.openVault'), click: () => shell.openPath(store.dir) },
+          { label: T('menu.changeVault'), click: send('change-vault') },
+          { type: 'separator' },
+          mac ? { role: 'close' } : { role: 'quit', label: T('menu.quit') },
+        ],
+      },
+      {
+        label: T('menu.edit'),
+        submenu: [
+          { role: 'undo', label: T('menu.undo') },
+          { role: 'redo', label: T('menu.redo') },
+          { type: 'separator' },
+          { role: 'cut', label: T('menu.cut') },
+          { role: 'copy', label: T('menu.copy') },
+          { role: 'paste', label: T('menu.paste') },
+          { role: 'selectAll', label: T('menu.selectAll') },
+          { type: 'separator' },
+          { label: T('menu.search'), accelerator: 'CmdOrCtrl+F', click: send('focus-search') },
+        ],
+      },
+      {
+        label: T('menu.help'),
+        submenu: [
+          { label: T('side.help'), accelerator: 'F1', click: send('help') },
+          { label: T('menu.shortcuts'), click: send('help-keys') },
+          { type: 'separator' },
+          { label: T('menu.checkUpdates'), click: () => updater?.check({ manual: true }) },
+          { label: T('set.auto'), type: 'checkbox', checked: autoUpdates(), click: (item) => writeSettings({ ...readSettings(), autoUpdate: item.checked }) },
+          { type: 'separator' },
+          { label: T('menu.report'), click: () => shell.openExternal('https://github.com/CorreaRicardo98/libreta/issues/new/choose') },
+          { label: T('help.code'), click: () => shell.openExternal('https://github.com/CorreaRicardo98/libreta') },
+        ],
+      },
+      {
+        label: T('menu.view'),
+        submenu: [
+          { label: T('list.asList'), accelerator: 'CmdOrCtrl+1', click: send('view-list') },
+          { label: T('list.asGallery'), accelerator: 'CmdOrCtrl+2', click: send('view-gallery') },
+          { type: 'separator' },
+          { role: 'zoomIn', label: T('menu.zoomIn') },
+          { role: 'zoomOut', label: T('menu.zoomOut') },
+          { role: 'resetZoom', label: T('menu.resetZoom') },
+          { type: 'separator' },
+          { role: 'togglefullscreen', label: T('menu.fullscreen') },
+          ...(DEV ? [{ role: 'toggleDevTools' }] : []),
+        ],
+      },
+    ]),
+  );
 }
 
 function registerIpc() {
@@ -212,7 +228,8 @@ function registerIpc() {
     const all = { items: [], skipped: [] };
     for (const f of r.filePaths) {
       const x = importer.importEnex(store, f);
-      all.items.push(...x.items); all.skipped.push(...x.skipped);
+      all.items.push(...x.items);
+      all.skipped.push(...x.skipped);
     }
     return all;
   });
@@ -225,7 +242,9 @@ function registerIpc() {
 
   h('prefs:get', () => getPrefs());
   h('prefs:set', (patch) => setPrefs(patch));
-  ipcMain.on('prefs:getSync', (e) => { e.returnValue = getPrefs(); });
+  ipcMain.on('prefs:getSync', (e) => {
+    e.returnValue = getPrefs();
+  });
   h('update:check', () => updater?.check({ manual: true }));
   h('update:download', () => updater?.download());
   h('update:install', () => updater?.install());
@@ -258,9 +277,13 @@ function registerIpc() {
     const inlined = html.replace(/libreta:\/\/att\/([\w.-]+)/g, (_m, f) => {
       try {
         const p = store.attachmentPath(f);
-        const mime = { '.png': 'image/png', '.jpg': 'image/jpeg', '.jpeg': 'image/jpeg', '.gif': 'image/gif', '.webp': 'image/webp', '.svg': 'image/svg+xml' }[path.extname(p).toLowerCase()] || 'application/octet-stream';
+        const mime =
+          { '.png': 'image/png', '.jpg': 'image/jpeg', '.jpeg': 'image/jpeg', '.gif': 'image/gif', '.webp': 'image/webp', '.svg': 'image/svg+xml' }[path.extname(p).toLowerCase()] ||
+          'application/octet-stream';
         return `data:${mime};base64,${fs.readFileSync(p).toString('base64')}`;
-      } catch { return ''; }
+      } catch {
+        return '';
+      }
     });
     const doc = `<!doctype html><html lang="${getPrefs().lang}"><meta charset="utf-8"><title>${escapeHtml(safe)}</title>
 <style>body{font:16px/1.6 Georgia,serif;max-width:46rem;margin:2rem auto;padding:0 1rem;color:#1b2430}
@@ -268,7 +291,10 @@ img{max-width:100%}table{border-collapse:collapse}td,th{border:1px solid #bbb;pa
 blockquote{border-left:3px solid #999;margin-left:0;padding-left:1rem;color:#555}
 ul[data-type=taskList]{list-style:none;padding-left:0}ul[data-type=taskList] li{display:flex;gap:.5rem}
 pre,code{font-family:ui-monospace,Consolas,monospace;background:#f1f2f4}</style><body>${inlined}</body></html>`;
-    if (kind === 'html') { fs.writeFileSync(r.filePath, doc); return true; }
+    if (kind === 'html') {
+      fs.writeFileSync(r.filePath, doc);
+      return true;
+    }
     const pdfWin = new BrowserWindow({ show: false, webPreferences: { sandbox: true } });
     await pdfWin.loadURL(`data:text/html;charset=utf-8,${encodeURIComponent(doc)}`);
     const pdf = await pdfWin.webContents.printToPDF({ pageSize: 'A4', printBackground: true });
@@ -286,7 +312,11 @@ function writeMarkdown(file, md) {
     const dest = path.join(path.dirname(file), folder);
     fs.mkdirSync(dest, { recursive: true });
     for (const n of names) {
-      try { fs.copyFileSync(store.attachmentPath(n), path.join(dest, n)); } catch { /* adjunto perdido */ }
+      try {
+        fs.copyFileSync(store.attachmentPath(n), path.join(dest, n));
+      } catch {
+        /* adjunto perdido */
+      }
     }
     md = md.replace(/libreta:\/\/att\/([\w.-]+)/g, (_m, n) => `${encodeURIComponent(folder)}/${n}`);
   }
@@ -294,12 +324,19 @@ function writeMarkdown(file, md) {
   return true;
 }
 
-function escapeHtml(s) { return s.replace(/[&<>"]/g, (c) => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;' }[c])); }
+function escapeHtml(s) {
+  return s.replace(/[&<>"]/g, (c) => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;' })[c]);
+}
 
 const gotLock = app.requestSingleInstanceLock();
 if (!gotLock) app.quit();
 else {
-  app.on('second-instance', () => { if (win) { if (win.isMinimized()) win.restore(); win.focus(); } });
+  app.on('second-instance', () => {
+    if (win) {
+      if (win.isMinimized()) win.restore();
+      win.focus();
+    }
+  });
   app.whenReady().then(() => {
     protocol.handle('libreta', (req) => {
       const u = new URL(req.url);

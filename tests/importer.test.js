@@ -37,7 +37,10 @@ test('Markdown: las imágenes locales se copian a los adjuntos', () => {
 test('Evernote: etiquetas, fechas y recursos por hash md5', () => {
   const { store, dir } = sandbox();
   const enex = path.join(dir, 'Cocina.enex');
-  fs.writeFileSync(enex, `<?xml version="1.0"?><en-export><note><title>Receta</title><content><![CDATA[<en-note><div>Harina</div><en-media hash="5a105e8b9d40e1329780d62ea2265d8a" type="text/plain"/></en-note>]]></content><created>20240105T101500Z</created><updated>20240106T101500Z</updated><tag>cocina</tag><resource><data encoding="base64">dGVzdDE=</data><mime>text/plain</mime><resource-attributes><file-name>nota.txt</file-name></resource-attributes></resource></note></en-export>`);
+  fs.writeFileSync(
+    enex,
+    `<?xml version="1.0"?><en-export><note><title>Receta</title><content><![CDATA[<en-note><div>Harina</div><en-media hash="5a105e8b9d40e1329780d62ea2265d8a" type="text/plain"/></en-note>]]></content><created>20240105T101500Z</created><updated>20240106T101500Z</updated><tag>cocina</tag><resource><data encoding="base64">dGVzdDE=</data><mime>text/plain</mime><resource-attributes><file-name>nota.txt</file-name></resource-attributes></resource></note></en-export>`,
+  );
   const { items } = importer.importEnex(store, enex);
   assert.equal(items[0].title, 'Receta');
   assert.deepEqual(items[0].tags, ['cocina']);

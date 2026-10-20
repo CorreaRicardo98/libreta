@@ -7,7 +7,11 @@ const dir = path.join(__dirname, '..', 'src', 'locales');
 const load = (l) => JSON.parse(fs.readFileSync(path.join(dir, `${l}.json`), 'utf8'));
 const es = load('es');
 const en = load('en');
-const vars = (s) => [...s.matchAll(/\{(\w+)\}/g)].map((m) => m[1]).sort().join(',');
+const vars = (s) =>
+  [...s.matchAll(/\{(\w+)\}/g)]
+    .map((m) => m[1])
+    .sort()
+    .join(',');
 
 test('español e inglés tienen exactamente las mismas claves', () => {
   const onlyEs = Object.keys(es).filter((k) => !(k in en));
@@ -16,7 +20,10 @@ test('español e inglés tienen exactamente las mismas claves', () => {
 });
 
 test('ninguna traducción está vacía', () => {
-  for (const [lang, d] of [['es', es], ['en', en]]) {
+  for (const [lang, d] of [
+    ['es', es],
+    ['en', en],
+  ]) {
     for (const [k, v] of Object.entries(d)) assert.ok(typeof v === 'string' && v.length > 0, `${lang}: «${k}» está vacía`);
   }
 });
@@ -40,10 +47,17 @@ test('el inglés no deja palabras en español', () => {
   }
 });
 
-test('todas las claves usadas con t(\'clave\') existen', () => {
+test("todas las claves usadas con t('clave') existen", () => {
   const roots = [path.join(__dirname, '..', 'src'), path.join(__dirname, '..', 'main')];
   const files = [];
-  const walk = (d) => { for (const f of fs.readdirSync(d, { withFileTypes: true })) { const p = path.join(d, f.name); if (f.isDirectory()) { if (f.name !== 'locales' && f.name !== 'public') walk(p); } else if (/\.(js|html)$/.test(f.name) && f.name !== 'i18n.js') files.push(p); } }; // i18n.js solo menciona t('clave') en comentarios
+  const walk = (d) => {
+    for (const f of fs.readdirSync(d, { withFileTypes: true })) {
+      const p = path.join(d, f.name);
+      if (f.isDirectory()) {
+        if (f.name !== 'locales' && f.name !== 'public') walk(p);
+      } else if (/\.(js|html)$/.test(f.name) && f.name !== 'i18n.js') files.push(p);
+    }
+  }; // i18n.js solo menciona t('clave') en comentarios
   roots.forEach(walk);
   const missing = [];
   for (const f of files) {

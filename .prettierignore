@@ -1,0 +1,8 @@
+dist-renderer
+dist
+node_modules
+build
+package-lock.json
+docs
+*.md
+*.json

@@ -26,9 +26,7 @@ const droppedFiles = (dt) => [...(dt?.files || [])];
 export async function insertFiles(ed, files, pos, { focus = true } = {}) {
   for (const f of files) {
     const src = await saveImageFile(f);
-    const node = f.type.startsWith('image/')
-      ? { type: 'image', attrs: { src, alt: f.name } }
-      : { type: 'attachment', attrs: { src, name: f.name, size: f.size } };
+    const node = f.type.startsWith('image/') ? { type: 'image', attrs: { src, alt: f.name } } : { type: 'attachment', attrs: { src, name: f.name, size: f.size } };
     const chain = focus ? ed.chain().focus() : ed.chain();
     (pos != null ? chain.insertContentAt(pos, node) : chain.insertContent(node)).run();
   }
@@ -45,7 +43,12 @@ function wikiSuggest(links) {
   let range = null;
   let editorRef = null;
 
-  const close = () => { pop?.remove(); pop = null; items = []; range = null; };
+  const close = () => {
+    pop?.remove();
+    pop = null;
+    items = [];
+    range = null;
+  };
   const apply = async (it) => {
     const ed = editorRef;
     if (!ed || !range) return;
@@ -53,11 +56,22 @@ function wikiSuggest(links) {
     close();
     const id = it.create ? await links.create(query.trim()) : it.id;
     const label = it.create ? query.trim() : it.title;
-    ed.chain().focus().deleteRange({ from, to })
-      .insertContent([{ type: 'noteLink', attrs: { id, label } }, { type: 'text', text: ' ' }]).run();
+    ed.chain()
+      .focus()
+      .deleteRange({ from, to })
+      .insertContent([
+        { type: 'noteLink', attrs: { id, label } },
+        { type: 'text', text: ' ' },
+      ])
+      .run();
   };
   const draw = (coords) => {
-    if (!pop) { pop = document.createElement('div'); pop.className = 'menu wiki-pop'; pop.setAttribute('role', 'listbox'); document.body.append(pop); }
+    if (!pop) {
+      pop = document.createElement('div');
+      pop.className = 'menu wiki-pop';
+      pop.setAttribute('role', 'listbox');
+      document.body.append(pop);
+    }
     pop.innerHTML = '';
     items.forEach((it, i) => {
       const b = document.createElement('button');
@@ -66,7 +80,10 @@ function wikiSuggest(links) {
       b.setAttribute('aria-selected', String(i === active));
       b.textContent = it.create ? t('editor.createNote', { title: range.query.trim() }) : it.title || t('note.untitled');
       if (it.create) b.className = 'wiki-create';
-      b.addEventListener('mousedown', (e) => { e.preventDefault(); apply(it); });
+      b.addEventListener('mousedown', (e) => {
+        e.preventDefault();
+        apply(it);
+      });
       pop.append(b);
     });
     const r = pop.getBoundingClientRect();
@@ -81,7 +98,7 @@ function wikiSuggest(links) {
       if (!selection.empty) return close();
       const $from = selection.$from;
       const before = $from.parent.textBetween(0, $from.parentOffset, undefined, '￼');
-      const m = /\[\[([^\[\]\n]{0,60})$/.exec(before);
+      const m = /\[\[([^[\]\n]{0,60})$/.exec(before);
       if (!m) return close();
       const query = m[1];
       range = { from: selection.from - m[0].length, to: selection.from, query };
@@ -98,8 +115,14 @@ function wikiSuggest(links) {
         pop.querySelectorAll('button').forEach((b, i) => b.setAttribute('aria-selected', String(i === active)));
         return true;
       }
-      if (event.key === 'Enter' || event.key === 'Tab') { apply(items[active]); return true; }
-      if (event.key === 'Escape') { close(); return true; }
+      if (event.key === 'Enter' || event.key === 'Tab') {
+        apply(items[active]);
+        return true;
+      }
+      if (event.key === 'Escape') {
+        close();
+        return true;
+      }
       return false;
     },
     close,
@@ -120,7 +143,9 @@ export function createEditor({ element, onUpdate, onSelection, onLink, links }) 
       TaskList,
       TaskItem.configure({ nested: true }),
       Table.configure({ resizable: true }),
-      TableRow, TableHeader, TableCell,
+      TableRow,
+      TableHeader,
+      TableCell,
     ],
     content: '',
     editorProps: {
@@ -140,11 +165,17 @@ export function createEditor({ element, onUpdate, onSelection, onLink, links }) 
       },
       handleClick(_view, _pos, event) {
         const a = event.target.closest?.('a[href]');
-        if (a && (event.ctrlKey || event.metaKey)) { window.open(a.href, '_blank'); return true; }
+        if (a && (event.ctrlKey || event.metaKey)) {
+          window.open(a.href, '_blank');
+          return true;
+        }
         return false;
       },
       handleKeyDown(_view, event) {
-        if (wiki?.key(event)) { event.preventDefault(); return true; }
+        if (wiki?.key(event)) {
+          event.preventDefault();
+          return true;
+        }
         if ((event.ctrlKey || event.metaKey) && event.key.toLowerCase() === 'k') {
           event.preventDefault();
           onLink?.();
@@ -155,7 +186,10 @@ export function createEditor({ element, onUpdate, onSelection, onLink, links }) 
     },
     onUpdate: () => onUpdate?.(),
     onSelectionUpdate: () => onSelection?.(),
-    onTransaction: ({ editor: ed }) => { onSelection?.(); wiki?.update(ed); },
+    onTransaction: ({ editor: ed }) => {
+      onSelection?.();
+      wiki?.update(ed);
+    },
     onBlur: () => wiki?.close(),
   });
   return editor;
@@ -166,7 +200,10 @@ const TAG_RE = /(?:^|\s)#(\p{L}[\p{L}\p{N}_-]{0,39})/gu;
 /** Todo lo que la lista y el buscador necesitan saber de una nota. */
 export function snapshot(editor) {
   const text = editor.getText({ blockSeparator: '\n' });
-  const lines = text.split('\n').map((l) => l.trim()).filter(Boolean);
+  const lines = text
+    .split('\n')
+    .map((l) => l.trim())
+    .filter(Boolean);
   const html = editor.getHTML();
   const tags = [...new Set([...text.matchAll(TAG_RE)].map((m) => m[1].toLowerCase()))];
   const img = html.match(/<img[^>]+src="([^"]+)"/);
@@ -174,7 +211,9 @@ export function snapshot(editor) {
     title: (lines[0] || '').slice(0, 120),
     preview: lines.slice(1).join(' ').slice(0, 160),
     thumb: img ? img[1] : '',
-    html, text, tags,
+    html,
+    text,
+    tags,
   };
 }
 

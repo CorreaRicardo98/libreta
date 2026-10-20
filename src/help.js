@@ -6,8 +6,18 @@ const REPO = 'https://github.com/CorreaRicardo98/libreta';
 
 // id de la tarjeta -> acción que lanza (si tiene). Los textos están en los archivos de idioma: help.card.<id>.*
 const CARDS = [
-  ['folders', 'new-folder'], ['smart', 'smart'], ['insert'], ['links'], ['search', 'search'], ['history'],
-  ['lock'], ['share'], ['import', 'import'], ['settings', 'settings'], ['updates'], ['vault', 'open-vault'],
+  ['folders', 'new-folder'],
+  ['smart', 'smart'],
+  ['insert'],
+  ['links'],
+  ['search', 'search'],
+  ['history'],
+  ['lock'],
+  ['share'],
+  ['import', 'import'],
+  ['settings', 'settings'],
+  ['updates'],
+  ['vault', 'open-vault'],
 ];
 const FILTER_COUNT = 7;
 const KEY_COUNT = 13;
@@ -38,18 +48,24 @@ export function helpDialog({ version = '', tab = 'start' }) {
       tabs.forEach((b) => b.setAttribute('aria-selected', String(b.dataset.tab === name)));
       body.scrollTop = 0;
       if (name === 'start') {
-        body.innerHTML = CARDS.map(([id, act], i) => `
+        body.innerHTML = CARDS.map(
+          ([id, act], i) => `
           <section class="help-card">
             <h3>${esc(t(`help.card.${id}.t`))}</h3>
             <p class="help-where">${esc(t(`help.card.${id}.where`))}</p>
             <p>${esc(t(`help.card.${id}.how`))}</p>
             ${act ? `<button type="button" data-act="${i}">${esc(t(`help.card.${id}.act`))}</button>` : ''}
-          </section>`).join('');
+          </section>`,
+        ).join('');
       } else if (name === 'search') {
         body.innerHTML = `<p class="muted" style="margin-top:0">${esc(t('help.searchIntro'))}</p>
-          <table class="help-table">${range(FILTER_COUNT).map((i) => `<tr><td><code>${esc(t(`help.f${i}.q`))}</code></td><td>${esc(t(`help.f${i}.d`))}</td><td><button type="button" data-try="${i}">${esc(t('help.try'))}</button></td></tr>`).join('')}</table>`;
+          <table class="help-table">${range(FILTER_COUNT)
+            .map((i) => `<tr><td><code>${esc(t(`help.f${i}.q`))}</code></td><td>${esc(t(`help.f${i}.d`))}</td><td><button type="button" data-try="${i}">${esc(t('help.try'))}</button></td></tr>`)
+            .join('')}</table>`;
       } else {
-        body.innerHTML = `<table class="help-table">${range(KEY_COUNT).map((i) => `<tr><td>${esc(t(`help.k${i}.a`))}</td><td><kbd>${esc(t(`help.k${i}.k`))}</kbd></td></tr>`).join('')}</table>`;
+        body.innerHTML = `<table class="help-table">${range(KEY_COUNT)
+          .map((i) => `<tr><td>${esc(t(`help.k${i}.a`))}</td><td><kbd>${esc(t(`help.k${i}.k`))}</kbd></td></tr>`)
+          .join('')}</table>`;
       }
     };
 
