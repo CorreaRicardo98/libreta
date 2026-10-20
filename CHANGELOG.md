@@ -6,6 +6,9 @@ Todas las versiones notables de Libreta. El formato sigue [Keep a Changelog](htt
 ### Agregado
 - **Plantillas de nota.** «Nueva…» → *Nota desde plantilla…* (o clic derecho en «+»). Vienen tres de fábrica (reunión, diario y lista de compras, en el idioma de la interfaz) y cualquier nota se puede guardar como plantilla desde el menú «…» → *Guardar como plantilla…*. Las propias viven en `templates/` dentro de la carpeta de notas, así que se sincronizan con ellas. Las bóvedas anteriores funcionan igual: la carpeta solo se crea al guardar la primera.
 
+### Mejorado
+- **Accesibilidad** (parte del #10): los diálogos atrapan el foco, lo devuelven a quien los abrió, tienen nombre y dejan el fondo inerte; los menús devuelven el foco; la barra lateral y el contador de notas se anuncian; las sugerencias de `[[` se asocian al editor; las tarjetas de adjunto tienen nombre. Informe en `docs/ACCESIBILIDAD.md`. Falta la prueba con NVDA u Orca.
+
 ## [1.6.0] - 2026-10-20
 ### Agregado
 - **Cambiar la contraseña** de una nota bloqueada (candado → «Cambiar contraseña…»). Se vuelve a cifrar con una sal nueva sin pasar por texto claro en disco. Se borra el historial de versiones de esa nota, porque estaba cifrado con la clave anterior (igual que al bloquear o quitar el bloqueo).

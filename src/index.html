@@ -11,16 +11,16 @@
   <div id="app" class="app" data-sidebar="open">
     <aside class="sidebar" data-i18n-label="side.aria">
       <div class="side-scroll">
-        <nav id="nav-main"></nav>
+        <nav id="nav-main" data-i18n-label="side.allNotes"></nav>
         <div id="smart-block" hidden>
           <div class="side-title" data-i18n="side.smart"></div>
-          <nav id="nav-smart"></nav>
+          <nav id="nav-smart" data-i18n-label="side.smart"></nav>
         </div>
         <div class="side-title" data-i18n="side.folders"></div>
-        <nav id="nav-folders"></nav>
+        <nav id="nav-folders" data-i18n-label="side.folders"></nav>
         <div id="tags-block" hidden>
           <div class="side-title" data-i18n="side.tags"></div>
-          <nav id="nav-tags"></nav>
+          <nav id="nav-tags" data-i18n-label="side.tags"></nav>
         </div>
       </div>
       <button class="side-add" id="btn-new-folder" type="button">
@@ -44,7 +44,7 @@
         </button>
         <div class="list-title">
           <h1 id="list-name"></h1>
-          <span id="list-count" class="muted"></span>
+          <span id="list-count" class="muted" role="status" aria-live="polite"></span>
         </div>
         <div class="seg" role="group" data-i18n-label="list.view">
           <button type="button" id="v-list" class="seg-btn" data-i18n-title="list.asListTip" data-i18n-label="list.asList" aria-pressed="true">

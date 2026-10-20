@@ -43,11 +43,25 @@ function wikiSuggest(links) {
   let range = null;
   let editorRef = null;
 
+  // el editor anuncia la lista de sugerencias como un cuadro combinado mientras está abierta
+  const syncAria = () => {
+    const dom = editorRef?.view?.dom;
+    if (!dom) return;
+    if (!pop) {
+      for (const a of ['aria-controls', 'aria-expanded', 'aria-activedescendant', 'aria-autocomplete']) dom.removeAttribute(a);
+      return;
+    }
+    dom.setAttribute('aria-controls', 'wiki-pop');
+    dom.setAttribute('aria-expanded', 'true');
+    dom.setAttribute('aria-autocomplete', 'list');
+    dom.setAttribute('aria-activedescendant', `wiki-opt-${active}`);
+  };
   const close = () => {
     pop?.remove();
     pop = null;
     items = [];
     range = null;
+    syncAria();
   };
   const apply = async (it) => {
     const ed = editorRef;
@@ -70,6 +84,8 @@ function wikiSuggest(links) {
       pop = document.createElement('div');
       pop.className = 'menu wiki-pop';
       pop.setAttribute('role', 'listbox');
+      pop.id = 'wiki-pop';
+      pop.setAttribute('aria-label', t('editor.linkSuggest'));
       document.body.append(pop);
     }
     pop.innerHTML = '';
@@ -77,6 +93,8 @@ function wikiSuggest(links) {
       const b = document.createElement('button');
       b.type = 'button';
       b.setAttribute('role', 'option');
+      b.id = `wiki-opt-${i}`;
+      b.tabIndex = -1;
       b.setAttribute('aria-selected', String(i === active));
       b.textContent = it.create ? t('editor.createNote', { title: range.query.trim() }) : it.title || t('note.untitled');
       if (it.create) b.className = 'wiki-create';
@@ -89,6 +107,7 @@ function wikiSuggest(links) {
     const r = pop.getBoundingClientRect();
     pop.style.left = `${Math.max(8, Math.min(coords.left, innerWidth - r.width - 8))}px`;
     pop.style.top = `${coords.bottom + r.height + 12 > innerHeight ? coords.top - r.height - 6 : coords.bottom + 6}px`;
+    syncAria();
   };
 
   return {
@@ -113,6 +132,7 @@ function wikiSuggest(links) {
       if (event.key === 'ArrowDown' || event.key === 'ArrowUp') {
         active = (active + (event.key === 'ArrowDown' ? 1 : -1) + items.length) % items.length;
         pop.querySelectorAll('button').forEach((b, i) => b.setAttribute('aria-selected', String(i === active)));
+        syncAria();
         return true;
       }
       if (event.key === 'Enter' || event.key === 'Tab') {

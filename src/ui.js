@@ -14,6 +14,7 @@ let closeMenu = null;
 /** items: { label, onClick, danger?, checked?, header? } | { sep: true } */
 export function showMenu(x, y, items) {
   hideMenu();
+  const opener = document.activeElement;
   const m = document.createElement('div');
   m.className = 'menu';
   m.setAttribute('role', 'menu');
@@ -69,8 +70,11 @@ export function showMenu(x, y, items) {
     document.removeEventListener('pointerdown', onDown, true);
     document.removeEventListener('keydown', onKey, true);
     window.removeEventListener('blur', hideMenu);
+    const hadFocus = m.contains(document.activeElement);
     m.remove();
     closeMenu = null;
+    // si el foco estaba en el menú, vuelve al botón que lo abrió (para que un lector de pantalla no se pierda)
+    if (hadFocus && opener?.isConnected && typeof opener.focus === 'function') opener.focus();
   };
 }
 
@@ -78,8 +82,12 @@ export function hideMenu() {
   closeMenu?.();
 }
 
+const FOCUSABLE = 'a[href], button:not([disabled]), input:not([disabled]):not([type="hidden"]), select:not([disabled]), textarea:not([disabled]), [tabindex]:not([tabindex="-1"])';
+let openDialogs = 0;
+
 export function dialog(build) {
   return new Promise((resolve) => {
+    const opener = document.activeElement;
     const back = document.createElement('div');
     back.className = 'dialog-back';
     const box = document.createElement('form');
@@ -87,15 +95,38 @@ export function dialog(build) {
     box.setAttribute('role', 'dialog');
     box.setAttribute('aria-modal', 'true');
     back.append(box);
+    // el fondo deja de ser accesible mientras hay un diálogo abierto (lector de pantalla y teclado)
+    const bg = document.getElementById('app');
+    openDialogs++;
+    if (bg) bg.inert = true;
     const done = (v) => {
       back.remove();
       document.removeEventListener('keydown', onKey, true);
+      if (--openDialogs === 0 && bg) bg.inert = false;
+      if (opener?.isConnected && typeof opener.focus === 'function') opener.focus(); // el foco vuelve a quien abrió el diálogo
       resolve(v);
     };
     const onKey = (e) => {
       if (e.key === 'Escape') {
         e.stopPropagation();
         done(null);
+        return;
+      }
+      if (e.key !== 'Tab') return;
+      // el foco no sale del diálogo con Tab ni con Mayús+Tab
+      const items = [...box.querySelectorAll(FOCUSABLE)].filter((el) => el.offsetParent !== null);
+      if (!items.length) return;
+      const first = items[0];
+      const last = items[items.length - 1];
+      if (!box.contains(document.activeElement)) {
+        e.preventDefault();
+        first.focus();
+      } else if (e.shiftKey && document.activeElement === first) {
+        e.preventDefault();
+        last.focus();
+      } else if (!e.shiftKey && document.activeElement === last) {
+        e.preventDefault();
+        first.focus();
       }
     };
     document.addEventListener('keydown', onKey, true);
@@ -103,7 +134,16 @@ export function dialog(build) {
       if (e.target === back) done(null);
     });
     build(box, done);
+    const title = box.querySelector('h2');
+    if (title) {
+      title.id = `dlg-title-${openDialogs}-${Date.now()}`;
+      box.setAttribute('aria-labelledby', title.id);
+    }
     document.body.append(back);
+    // si el diálogo no enfocó nada por su cuenta, el foco entra en el primer control
+    setTimeout(() => {
+      if (!box.contains(document.activeElement)) box.querySelector(FOCUSABLE)?.focus();
+    }, 50);
   });
 }
 
