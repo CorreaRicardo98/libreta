@@ -127,6 +127,27 @@ export function passwordDialog({ title, text = '', confirm = false, ok = tr('ui.
   });
 }
 
+/** Cambio de contraseña: actual + nueva dos veces. Resuelve con { current, next } o null. */
+export function changePasswordDialog() {
+  return dialog((box, done) => {
+    const field = (name, key, margin) => `<input type="password" name="${name}" placeholder="${esc(tr(key))}" aria-label="${esc(tr(key))}" autocomplete="off"${margin ? ' style="margin-top:8px"' : ''}>`;
+    box.innerHTML = `<h2>${esc(tr('lock.changeTitle'))}</h2><p class="muted" style="margin:0 0 12px">${esc(tr('lock.changeText'))}</p>
+      ${field('cur', 'lock.currentPh')}${field('p1', 'lock.newPh', true)}${field('p2', 'pw.repeat', true)}
+      <p class="form-error" role="alert"></p>
+      <div class="row">${cancelBtn()}<button type="submit" class="btn-primary">${esc(tr('lock.changeOk'))}</button></div>`;
+    const [cur, a, b] = box.querySelectorAll('input');
+    const err = box.querySelector('.form-error');
+    box.addEventListener('submit', (e) => {
+      e.preventDefault();
+      if (!cur.value || !a.value) { err.textContent = tr('pw.empty'); return; }
+      if (a.value !== b.value) { err.textContent = tr('pw.mismatch'); return; }
+      done({ current: cur.value, next: a.value });
+    });
+    box.querySelector('[data-no]').addEventListener('click', () => done(null));
+    setTimeout(() => cur.focus());
+  });
+}
+
 /** Formulario de carpeta inteligente. Resuelve con { name, rules } o null. */
 export function smartDialog({ folders, value }) {
   const r = value?.rules || {};

@@ -25,6 +25,7 @@ contextBridge.exposeInMainWorld('libreta', {
     lock: (id, pwd) => call('notes:lock', id, pwd),
     unlock: (id, pwd) => call('notes:unlock', id, pwd),
     relock: (id) => call('notes:relock', id),
+    changePassword: (id, oldPwd, newPwd) => call('notes:changePassword', id, oldPwd, newPwd),
     removeLock: (id, pwd) => call('notes:removeLock', id, pwd),
     emptyTrash: () => call('notes:emptyTrash'),
   },
