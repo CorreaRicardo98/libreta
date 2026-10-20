@@ -1,10 +1,11 @@
-const { app, BrowserWindow, Menu, ipcMain, dialog, shell, protocol, net, session } = require('electron');
+const { app, BrowserWindow, Menu, ipcMain, dialog, shell, protocol, net, session, nativeTheme } = require('electron');
 const path = require('node:path');
 const fs = require('node:fs');
 const { pathToFileURL } = require('node:url');
 const { Store } = require('./store');
 const importer = require('./importer');
 const { createUpdater } = require('./updater');
+const prefsLib = require('./prefs');
 
 const DEV = !!process.env.LIBRETA_DEV;
 let win = null;
@@ -26,6 +27,20 @@ function writeSettings(s) {
   fs.writeFileSync(settingsFile(), JSON.stringify(s, null, 2));
 }
 const autoUpdates = () => readSettings().autoUpdate !== false; // activado salvo que la persona lo apague
+
+// ---- preferencias de apariencia (el tema se aplica con nativeTheme: también cambia menús y diálogos del sistema)
+const getPrefs = () => ({ ...prefsLib.withDefaults(readSettings().prefs), autoUpdate: autoUpdates() });
+const applyTheme = () => { nativeTheme.themeSource = getPrefs().theme; };
+function setPrefs(patch) {
+  const settings = readSettings();
+  const next = { ...settings, prefs: { ...(settings.prefs || {}), ...prefsLib.sanitize(patch) } };
+  const autoChanged = typeof patch?.autoUpdate === 'boolean' && patch.autoUpdate !== autoUpdates();
+  if (typeof patch?.autoUpdate === 'boolean') next.autoUpdate = patch.autoUpdate;
+  writeSettings(next);
+  applyTheme();
+  if (autoChanged) buildMenu(); // la casilla del menú Ayuda debe reflejar el cambio
+  return getPrefs();
+}
 const defaultVault = () => path.join(app.getPath('documents'), 'Libreta');
 
 function watchVault() {
@@ -43,7 +58,7 @@ function createWindow() {
   win = new BrowserWindow({
     width: 1180, height: 760, minWidth: 720, minHeight: 480,
     title: 'Libreta',
-    backgroundColor: '#f6f7f9',
+    backgroundColor: nativeTheme.shouldUseDarkColors ? '#12161e' : '#f6f7f9',
     icon: path.join(__dirname, '..', 'build', 'icon.png'),
     webPreferences: {
       preload: path.join(__dirname, 'preload.js'),
@@ -81,6 +96,7 @@ function buildMenu() {
         { label: 'Exportar como HTML…', click: send('export-html') },
         { label: 'Exportar como Markdown…', click: send('export-md') },
         { type: 'separator' },
+        { label: 'Ajustes…', accelerator: 'CmdOrCtrl+,', click: send('settings') },
         { label: 'Abrir carpeta de notas', click: () => shell.openPath(store.dir) },
         { label: 'Cambiar carpeta de notas…', click: send('change-vault') },
         { type: 'separator' },
@@ -188,6 +204,9 @@ function registerIpc() {
     return shell.openPath(store.attachmentPath(m[1]));
   });
 
+  h('prefs:get', () => getPrefs());
+  h('prefs:set', (patch) => setPrefs(patch));
+  ipcMain.on('prefs:getSync', (e) => { e.returnValue = getPrefs(); });
   h('update:check', () => updater?.check({ manual: true }));
   h('update:download', () => updater?.download());
   h('update:install', () => updater?.install());
@@ -272,6 +291,7 @@ else {
     // la cámara solo se usa para el escáner de documentos de la propia app
     session.defaultSession.setPermissionRequestHandler((_wc, perm, cb) => cb(perm === 'media'));
     session.defaultSession.setPermissionCheckHandler((_wc, perm) => perm === 'media');
+    applyTheme();
     store = new Store(readSettings().vault || defaultVault());
     registerIpc();
     buildMenu();

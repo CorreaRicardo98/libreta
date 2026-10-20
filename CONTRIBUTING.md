@@ -22,6 +22,7 @@ Tus notas de desarrollo se guardan en `~/Documentos/Libreta` (o en la carpeta qu
 main/            Proceso principal de Electron (Node.js)
   main.js          ventana, menú, IPC, exportación a PDF/HTML/Markdown
   store.js         almacén de notas en archivos: carpetas, cifrado, historial, carpetas inteligentes
+  prefs.js         preferencias de apariencia: valores permitidos y por defecto
   updater.js       actualización desde las Releases de GitHub (electron-updater)
   importer.js      importadores: Markdown/HTML/texto y Evernote (.enex)
   preload.js       puente seguro entre la interfaz y el proceso principal (window.libreta)
@@ -33,6 +34,7 @@ src/             Interfaz (HTML + JavaScript sin framework, empaquetada con Vite
   notelink.js      nodo de enlace entre notas
   draw.js          dibujo a mano y escáner con cámara
   md.js            conversor HTML → Markdown
+  settings.js      ventana de Ajustes y aplicación de las preferencias
   help.js          guía rápida (Ayuda → Guía rápida): tarjetas, filtros y atajos
   ui.js            menús, diálogos, avisos, fechas
   styles.css       estilos y tema claro/oscuro

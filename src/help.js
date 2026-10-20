@@ -26,6 +26,9 @@ const CARDS = [
   { t: 'Traer tus notas de otro programa', where: 'Archivo → Importar notas…',
     how: 'Acepta carpetas de Markdown, texto o HTML (Joplin, Obsidian, Bear, Notion) y archivos de Evernote (.enex). Apple Notes hay que exportarla antes con una herramienta aparte.',
     act: ['import', 'Importar notas'] },
+  { t: 'Personalizar Libreta', where: 'Archivo → Ajustes… (Ctrl + ,) o el botón «Ajustes» de la barra lateral',
+    how: 'Elige tema claro, oscuro o el de tu sistema, un color de acento, la letra y el tamaño del texto de las notas, el ancho de la página y la vista de la lista. Los cambios se ven al instante.',
+    act: ['settings', 'Abrir Ajustes'] },
   { t: 'Mantener Libreta al día', where: 'Ayuda → Buscar actualizaciones…',
     how: 'Libreta revisa cada pocas horas si hay una versión nueva en GitHub y te avisa con una tarjeta en la esquina; nada se instala sin que lo aceptes. Solo consulta la lista de versiones y no envía tus notas. Puedes desactivar la revisión en Ayuda → Buscar actualizaciones automáticamente.' },
   { t: 'Tus notas son archivos tuyos', where: 'Archivo → Abrir carpeta de notas',
@@ -48,7 +51,7 @@ const KEYS = [
   ['Ver como lista / galería', 'Ctrl + 1 / Ctrl + 2'], ['Negrita / cursiva / subrayado', 'Ctrl + B / I / U'],
   ['Enlace web', 'Ctrl + K'], ['Lista de tareas', 'Ctrl + Mayús + 9'], ['Enlazar otra nota', '[['],
   ['Deshacer / rehacer', 'Ctrl + Z / Ctrl + Mayús + Z'], ['Mover a la papelera', 'Supr (con la nota seleccionada en la lista)'],
-  ['Cambiar de nota en la lista', '↑ / ↓'], ['Abrir esta guía', 'F1'],
+  ['Cambiar de nota en la lista', '↑ / ↓'], ['Abrir Ajustes', 'Ctrl + ,'], ['Abrir esta guía', 'F1'],
 ];
 
 /**

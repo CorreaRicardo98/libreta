@@ -12,6 +12,10 @@
   --ink-3: #8590a3;
   --accent: #2640c4;
   --accent-ink: #fff;
+  --doc-font: var(--serif);
+  --doc-size: 17px;
+  --doc-scale: 1;
+  --doc-width: 46rem;
   --accent-soft: #dde3fa;
   --marker: #ffd640;
   --danger: #b3261e;
@@ -169,7 +173,7 @@ kbd {
 .tb-sep { width: 1px; height: 20px; background: var(--line); margin: 0 6px; }
 .tb-grow { flex: 1; }
 .doc-scroll { flex: 1; overflow-y: auto; min-height: 0; }
-.doc { max-width: 46rem; margin: 0 auto; padding: 22px 36px 120px; }
+.doc { max-width: var(--doc-width); margin: 0 auto; padding: 22px 36px 120px; }
 .doc-date { text-align: center; font-size: 12px; margin-bottom: 18px; }
 .statusbar { padding: 5px 16px; font-size: 12px; border-top: 1px solid var(--line); display: flex; justify-content: space-between; }
 .trash-bar {
@@ -178,17 +182,17 @@ kbd {
 }
 
 /* contenido de la nota: serif para leer y escribir largo */
-.ProseMirror { outline: none; font: 17px/1.65 var(--serif); font-optical-sizing: auto; min-height: 50vh; word-wrap: break-word; }
-.ProseMirror > :first-child { font: 600 32px/1.2 var(--ui); letter-spacing: -.015em; margin: 0 0 .5em; }
+.ProseMirror { outline: none; font-family: var(--doc-font); font-size: var(--doc-size); line-height: 1.65; font-optical-sizing: auto; min-height: 50vh; word-wrap: break-word; }
+.ProseMirror > :first-child { font: 600 calc(32px * var(--doc-scale))/1.2 var(--ui); letter-spacing: -.015em; margin: 0 0 .5em; }
 .ProseMirror p { margin: 0 0 .7em; }
 .ProseMirror p.is-editor-empty:first-child::before { content: attr(data-placeholder); color: var(--ink-3); float: left; height: 0; pointer-events: none; }
-.ProseMirror h1 { font: 600 28px/1.25 var(--ui); letter-spacing: -.012em; margin: 1.1em 0 .4em; }
-.ProseMirror h2 { font: 600 22px/1.3 var(--ui); margin: 1em 0 .35em; }
-.ProseMirror h3 { font: 600 18px/1.35 var(--ui); margin: .9em 0 .3em; }
+.ProseMirror h1 { font: 600 calc(28px * var(--doc-scale))/1.25 var(--ui); letter-spacing: -.012em; margin: 1.1em 0 .4em; }
+.ProseMirror h2 { font: 600 calc(22px * var(--doc-scale))/1.3 var(--ui); margin: 1em 0 .35em; }
+.ProseMirror h3 { font: 600 calc(18px * var(--doc-scale))/1.35 var(--ui); margin: .9em 0 .3em; }
 .ProseMirror ul, .ProseMirror ol { padding-left: 1.5em; margin: 0 0 .7em; }
 .ProseMirror li > p { margin: 0 0 .25em; }
 .ProseMirror blockquote { margin: .8em 0; padding: 2px 0 2px 16px; border-left: 3px solid var(--accent); color: var(--ink-2); }
-.ProseMirror pre { font: 14px/1.55 var(--mono); background: var(--bg); border: 1px solid var(--line); border-radius: 8px; padding: 12px 14px; overflow-x: auto; }
+.ProseMirror pre { font: calc(14px * var(--doc-scale))/1.55 var(--mono); background: var(--bg); border: 1px solid var(--line); border-radius: 8px; padding: 12px 14px; overflow-x: auto; }
 .ProseMirror code { font: .88em var(--mono); background: var(--bg); padding: 1px 5px; border-radius: 4px; }
 .ProseMirror pre code { background: none; padding: 0; }
 .ProseMirror a { color: var(--accent); text-decoration: underline; text-underline-offset: 2px; cursor: pointer; }
@@ -206,7 +210,7 @@ kbd {
 .ProseMirror ul[data-type="taskList"] input[type="checkbox"]:checked { background: var(--accent); border-color: var(--accent); }
 .ProseMirror ul[data-type="taskList"] input[type="checkbox"]:checked::after { content: ''; width: 9px; height: 5px; border: 2px solid var(--accent-ink); border-top: 0; border-right: 0; rotate: -45deg; translate: 0 -1px; }
 .ProseMirror ul[data-type="taskList"] li[data-checked="true"] > div { color: var(--ink-3); text-decoration: line-through; }
-.ProseMirror table { border-collapse: collapse; width: 100%; margin: .8em 0; table-layout: fixed; font: 15px/1.45 var(--ui); }
+.ProseMirror table { border-collapse: collapse; width: 100%; margin: .8em 0; table-layout: fixed; font: calc(15px * var(--doc-scale))/1.45 var(--ui); }
 .ProseMirror td, .ProseMirror th { border: 1px solid var(--line); padding: 6px 10px; vertical-align: top; position: relative; min-width: 3em; }
 .ProseMirror th { background: var(--bg); font-weight: 600; text-align: left; }
 .ProseMirror .selectedCell::after { content: ''; position: absolute; inset: 0; background: var(--accent-soft); opacity: .6; pointer-events: none; }
@@ -379,3 +383,38 @@ kbd {
 .uc-bar { height: 6px; border-radius: 99px; background: var(--line); overflow: hidden; margin-top: 10px; }
 .uc-bar i { display: block; height: 100%; background: var(--accent); transition: width .2s; }
 @media (max-width: 860px) { .update-card { bottom: 12px; right: 12px; } }
+
+/* ---------- colores de acento (se eligen en Ajustes; el azul es el predeterminado) ---------- */
+:root[data-accent="verde"] { --accent: #0f7a55; --accent-soft: #d5f0e5; }
+:root[data-accent="violeta"] { --accent: #6b3fd1; --accent-soft: #e8defb; }
+:root[data-accent="coral"] { --accent: #c23b3b; --accent-soft: #fbdcdc; }
+:root[data-accent="ambar"] { --accent: #a85d00; --accent-soft: #fbe8cc; }
+:root[data-accent="grafito"] { --accent: #374151; --accent-soft: #e5e7eb; }
+@media (prefers-color-scheme: dark) {
+  :root[data-accent="verde"] { --accent: #4cc9a0; --accent-ink: #06251b; --accent-soft: #12362b; }
+  :root[data-accent="violeta"] { --accent: #b69bff; --accent-ink: #1b0d3d; --accent-soft: #2d2250; }
+  :root[data-accent="coral"] { --accent: #ff8f8f; --accent-ink: #3a0b0b; --accent-soft: #4a1f1f; }
+  :root[data-accent="ambar"] { --accent: #ffb454; --accent-ink: #2a1700; --accent-soft: #3f2d12; }
+  :root[data-accent="grafito"] { --accent: #cbd5e1; --accent-ink: #0f172a; --accent-soft: #2a3342; }
+}
+
+/* ---------- ajustes ---------- */
+.dialog.settings { width: min(560px, 100%); }
+.settings section { margin-bottom: 14px; }
+.settings h3 { margin: 0 0 4px; font-size: 13px; font-weight: 650; color: var(--ink-2); }
+.set-row { display: grid; grid-template-columns: 150px minmax(0, 1fr); gap: 6px 12px; align-items: center; padding: 8px 0; border-bottom: 1px solid var(--line); }
+.set-label { font-size: 14px; }
+.set-row .seg { flex-wrap: wrap; justify-self: start; }
+.set-hint { margin: 4px 0 0; font-size: 12.5px; color: var(--ink-3); }
+.set-vault { display: flex; align-items: center; gap: 6px; min-width: 0; }
+.set-vault code { flex: 1; min-width: 0; font: 12px/1.35 var(--mono); color: var(--ink-2); overflow-wrap: anywhere; }
+.set-vault button { border: 1px solid var(--line); background: var(--paper); border-radius: 8px; padding: 4px 10px; }
+.set-chk { align-items: flex-start; padding: 8px 0; }
+.set-chk span { display: flex; flex-direction: column; gap: 2px; }
+.set-chk small { color: var(--ink-3); font-size: 12.5px; line-height: 1.4; }
+.settings .swatches { gap: 8px; }
+.settings .sw { width: 28px; height: 28px; }
+.pref-sample { margin-top: 10px; padding: 12px 14px; border: 1px solid var(--line); border-radius: 10px; background: var(--bg); font-family: var(--doc-font); font-size: var(--doc-size); line-height: 1.55; }
+.settings .row { flex-wrap: wrap; justify-content: space-between; }
+@media (max-width: 520px) { .set-row { grid-template-columns: 1fr; } }
+.dialog:focus { outline: none; }
