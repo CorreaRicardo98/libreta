@@ -84,6 +84,6 @@ npm run dist:linux   # AppImage y .deb
 npm run dist:win     # instalador y portable (mejor desde Windows)
 ```
 
-Las versiones oficiales las compila GitHub Actions al subir una etiqueta `vX.Y.Z`. Esa Release también adjunta `latest.yml` y `latest-linux.yml`, que son los que lee la actualización automática: **no los borres ni renombres los instaladores**, y mantén los nombres sin espacios (`artifactName` en `package.json`).
+Antes de publicar una versión, agrega su entrada en [CHANGELOG.md](CHANGELOG.md). Las versiones oficiales las compila GitHub Actions al subir una etiqueta `vX.Y.Z`. Esa Release también adjunta `latest.yml` y `latest-linux.yml`, que son los que lee la actualización automática: **no los borres ni renombres los instaladores**, y mantén los nombres sin espacios (`artifactName` en `package.json`).
 
 Al participar aceptas el [Código de convivencia](CODE_OF_CONDUCT.md) y que tu aporte se publique bajo la licencia [MIT](LICENSE) del proyecto.
